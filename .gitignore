@@ -1,6 +1,7 @@
 build/
 *.swp
 *.swo
+.vscode/
 
 compile_commands.json
 # Prerequisites
