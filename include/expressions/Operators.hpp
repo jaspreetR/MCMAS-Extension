@@ -17,12 +17,11 @@ namespace detail {
 } // namespace detail
 */
 
-
   struct AND {
     using ResultType = bool;
     inline static const std::string token = "and";
 
-    static bool apply(bool left, bool right) {
+    static ResultType apply(bool left, bool right) {
       return left && right;
     }
   };
@@ -31,7 +30,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "or";
 
-    static bool apply(bool left, bool right) {
+    static ResultType apply(bool left, bool right) {
       return left || right;
     }
   };
@@ -40,7 +39,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "!";
 
-    static bool apply(bool arg) {
+    static ResultType apply(bool arg) {
       return !arg;
     }
   };
@@ -49,7 +48,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "<=";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left <= right;
     }
   };
@@ -58,7 +57,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "<";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left < right;
     }
   };
@@ -67,7 +66,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = ">=";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left >= right;
     }
   };
@@ -76,7 +75,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = ">";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left > right;
     }
   };
@@ -85,7 +84,7 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "=";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left == right;
     }
   };
@@ -94,10 +93,83 @@ namespace detail {
     using ResultType = bool;
     inline static const std::string token = "!=";
 
-    static bool apply(int left, int right) {
+    static ResultType apply(int left, int right) {
       return left != right;
     }
   };
+
+  struct ADD {
+    using ResultType = int;
+    inline static const std::string token = "+";
+
+    static ResultType apply(int left, int right) {
+      return left + right;
+    }
+  };
+
+  struct SUB {
+    using ResultType = int;
+    inline static const std::string token = "-";
+
+    static ResultType apply(int left, int right) {
+      return left - right;
+    }
+  };
+
+  struct MUL {
+    using ResultType = int;
+    inline static const std::string token = "*";
+
+    static ResultType apply(int left, int right) {
+      return left * right;
+    }
+  };
+
+  struct DIV {
+    using ResultType = int;
+    inline static const std::string token = "/";
+
+    static ResultType apply(int left, int right) {
+      return left / right;
+    }
+  };
+
+  struct BITAND {
+    using ResultType = int;
+    inline static const std::string token = "&";
+
+    static ResultType apply(int left, int right) {
+      return left & right;
+    }
+  };
+
+  struct BITOR {
+    using ResultType = int;
+    inline static const std::string token = "|";
+
+    static ResultType apply(int left, int right) {
+      return left | right;
+    }
+  };
+
+  struct BITXOR {
+    using ResultType = int;
+    inline static const std::string token = "^";
+
+    static ResultType apply(int left, int right) {
+      return left ^ right;
+    }
+  };
+
+  struct BITNOT {
+    using ResultType = int;
+    inline static const std::string token = "~";
+
+    static ResultType apply(int child) {
+      return ~child;
+    }
+  };
+
 } // namespace operators
 } // namespace mcmas
 

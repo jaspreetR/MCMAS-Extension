@@ -1,6 +1,7 @@
 #ifndef MCMAS_DEEPPTR_HPP
 #define MCMAS_DEEPPTR_HPP
 #include <memory>
+#include <type_traits>
 
 namespace mcmas {
 
@@ -8,7 +9,8 @@ namespace mcmas {
   //
   // Extends std::unique_ptr to allow for deep_copying of pointers
   // Used for representing children in AST
-  template <typename T>
+  /*
+  template <typename T, typename = std::enable_if_t<not std::is_abstract_v<T>>>
   struct DeepPtr : public std::unique_ptr<T>
   {
     public:
@@ -16,17 +18,25 @@ namespace mcmas {
       DeepPtr() {};
       DeepPtr(DeepPtr<T> const& other)
       { 
-          auto value = *other.get();
-          this->reset(new T(value));
+        auto value = *other.get();
+        this->reset(new T(value));
       }
       DeepPtr<T>& operator=(DeepPtr<T> const& other)
       {
-          auto value = *other.get();
-          this->reset(new T(value));
-          return *this;
+        auto value = *other.get();
+        this->reset(new T(value));
+        return *this;
       }
   };
 
+  template <typename T>
+  struct DeepPtr : public std::unique_ptr<T>
+  {
+    public:
+      using std::unique_ptr<T>::unique_ptr;
+      DeepPtr() {};
+  };
+  */
 }
 
 #endif

@@ -6,6 +6,12 @@
 #include "Operators.hpp"
 
 namespace mcmas {
+
+  class BoolExpr;
+  class LogicExpr;
+  class ArithmeticExpr;
+
+
   template <typename Child, typename Op>
   class BinaryExpr {
     public:
@@ -34,16 +40,6 @@ namespace mcmas {
       auto accept(Visitor&& visitor) {
         return visitor.visit(*this);
       }
-
-      std::string to_string() {
-        return "(" + left->to_string() + ") " + Op::token + " (" + right->to_string() + ")";
-      };   
-
-      auto evaluate() {
-        auto left_result = left->evaluate();
-        auto right_result = right->evaluate();
-        return Op::apply(left_result, right_result); 
-      }
   };
 
   template <typename Child, typename Op>
@@ -67,15 +63,6 @@ namespace mcmas {
       auto accept(Visitor&& visitor) {
         return visitor.visit(*this);
       }
-
-      std::string to_string() {
-        return Op::token + " (" + child->to_string() + ")";
-      }
-
-      auto evaluate() {
-        auto child_result = child->evaluate();
-        return Op::apply(child_result);
-      }
   };
 
   class Bool {
@@ -84,14 +71,6 @@ namespace mcmas {
 
       Bool() = default;
       explicit Bool(bool value) : value(value){}
-
-      std::string to_string() {
-        return value ? "true" : "false";
-      }
-
-      bool evaluate() {
-        return value;
-      }
   };
 
   class Int {
@@ -100,14 +79,6 @@ namespace mcmas {
 
       Int() = default;
       explicit Int(int value) : value(value){}
-
-      std::string to_string() {
-        return std::to_string(value);
-      }
-
-      int evaluate() {
-        return value;
-      }
   };
 
   class Identifier {
@@ -116,15 +87,6 @@ namespace mcmas {
 
       Identifier() = default;
       explicit Identifier(const std::string& value) : value(value){}
-
-      std::string to_string() {
-        return value;
-      }
-
-      // TODO
-      int evaluate() {
-        return 0;
-      }
   };
 
   class BoolExpr {
@@ -160,26 +122,16 @@ namespace mcmas {
         auto func = [&](auto&& expr) { return visitor.visit(expr); };
         return std::visit(func, expr);
       }
-
-      std::string to_string() {
-        auto to_string_visitor = [](auto&& expr){ return expr.to_string(); };
-        return std::visit(to_string_visitor, expr);
-      }
-
-      bool evaluate() {
-        auto evaluate_visitor = [](auto&& expr){ return expr.evaluate(); };
-        return std::visit(evaluate_visitor, expr);
-      }
   };
 
   class LogicExpr {
     private:
-      using LEQ = BinaryExpr<LogicExpr, operators::LEQ>;
-      using LT = BinaryExpr<LogicExpr, operators::LT>;
-      using GEQ = BinaryExpr<LogicExpr, operators::GEQ>;
-      using GT = BinaryExpr<LogicExpr, operators::GT>;
-      using EQ = BinaryExpr<LogicExpr, operators::EQ>;
-      using NEQ = BinaryExpr<LogicExpr, operators::NEQ>;
+      using LEQ = BinaryExpr<ArithmeticExpr, operators::LEQ>;
+      using LT = BinaryExpr<ArithmeticExpr, operators::LT>;
+      using GEQ = BinaryExpr<ArithmeticExpr, operators::GEQ>;
+      using GT = BinaryExpr<ArithmeticExpr, operators::GT>;
+      using EQ = BinaryExpr<ArithmeticExpr, operators::EQ>;
+      using NEQ = BinaryExpr<ArithmeticExpr, operators::NEQ>;
 
       LogicExpr(LEQ&& expr) : expr(std::forward<LEQ>(expr)){}
       LogicExpr(LT&& expr) : expr(std::forward<LT>(expr)){}
@@ -189,48 +141,103 @@ namespace mcmas {
       LogicExpr(NEQ&& expr) : expr(std::forward<NEQ>(expr)){}
       
     public:
-      static LogicExpr Leq(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(LEQ(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Leq(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(LEQ(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
 
-      static LogicExpr Lt(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(LT(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Lt(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(LT(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
 
-      static LogicExpr Geq(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(GEQ(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Geq(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(GEQ(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
 
-      static LogicExpr Gt(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(GT(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Gt(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(GT(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
 
-      static LogicExpr Eq(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(EQ(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Eq(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(EQ(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
 
-      static LogicExpr Neq(LogicExpr&& left, LogicExpr&& right) {
-        return LogicExpr(NEQ(std::forward<LogicExpr>(left), std::forward<LogicExpr>(left)));
+      static LogicExpr Neq(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return LogicExpr(NEQ(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
       }
   
       std::variant<LEQ, LT, GEQ, GT, EQ, NEQ> expr;
 
       template <typename Visitor>
       auto accept(Visitor&& visitor) {
-        return std::visit([&](auto&& expr){ return visitor.visit(expr); }, expr);
-      }
-
-      std::string to_string() {
-        auto to_string_visitor = [](auto&& expr){ return expr.to_string(); };
-        return std::visit(to_string_visitor, expr);
-      }
-
-      bool evaluate() {
-        auto evaluate_visitor = [](auto&& expr){ return expr.evaluate(); };
-        return std::visit(evaluate_visitor, expr);
+        auto func = [&](auto&& expr) { return visitor.visit(expr); };
+        return std::visit(func, expr);
       }
   };
 
+  class ArithmeticExpr {
+    private:
+      using ADD = BinaryExpr<ArithmeticExpr, operators::ADD>;
+      using SUB = BinaryExpr<ArithmeticExpr, operators::SUB>;
+      using MUL = BinaryExpr<ArithmeticExpr, operators::MUL>;
+      using DIV = BinaryExpr<ArithmeticExpr, operators::DIV>;
+      using BITAND= BinaryExpr<ArithmeticExpr, operators::BITAND>;
+      using BITOR = BinaryExpr<ArithmeticExpr, operators::BITOR>;
+      using BITXOR = BinaryExpr<ArithmeticExpr, operators::BITXOR>;
+      using BITNOT = UnaryExpr<ArithmeticExpr, operators::BITNOT>;
+
+      ArithmeticExpr(ADD&& expr) : expr(std::forward<ADD>(expr)){}
+      ArithmeticExpr(SUB&& expr) : expr(std::forward<SUB>(expr)){}
+      ArithmeticExpr(MUL&& expr) : expr(std::forward<MUL>(expr)){}
+      ArithmeticExpr(DIV&& expr) : expr(std::forward<DIV>(expr)){}
+      ArithmeticExpr(BITAND&& expr) : expr(std::forward<BITAND>(expr)){}
+      ArithmeticExpr(BITOR&& expr) : expr(std::forward<BITOR>(expr)){}
+      ArithmeticExpr(BITXOR&& expr) : expr(std::forward<BITXOR>(expr)){}
+      ArithmeticExpr(BITNOT&& expr) : expr(std::forward<BITNOT>(expr)){}
+      
+    public:
+      // allow implicit cast from mcmas::Int
+      ArithmeticExpr(Int&& expr) : expr(std::forward<Int>(expr)){}
+
+      static ArithmeticExpr Add(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(ADD(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr Sub(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(SUB(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr Mul(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(MUL(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr Div(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(DIV(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr BitAnd(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(BITAND(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr BitOr(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(BITOR(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr BitXor(ArithmeticExpr&& left, ArithmeticExpr&& right) {
+        return ArithmeticExpr(BITXOR(std::forward<ArithmeticExpr>(left), std::forward<ArithmeticExpr>(right)));
+      }
+
+      static ArithmeticExpr BitNot(ArithmeticExpr&& child) {
+        return ArithmeticExpr(BitNot(std::forward<ArithmeticExpr>(child)));
+      }
+  
+      std::variant<ADD, SUB, MUL, DIV, BITAND, BITOR, BITXOR, BITNOT, Int> expr;
+
+      template <typename Visitor>
+      auto accept(Visitor&& visitor) {
+        auto func = [&](auto&& expr) { return visitor.visit(expr); };
+        return std::visit(func, expr);
+      }
+  };
 
 }
 
