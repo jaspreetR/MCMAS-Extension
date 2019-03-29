@@ -97,8 +97,12 @@ namespace mcmas {
     return Expression::Ptr(new IntLiteral(value));
   }
 
-  Expression::Ptr Expression::Id(const std::string& value) {
-    return Expression::Ptr(new Identifier(value));
+  Expression::Ptr Expression::Id(const std::string& id) {
+    return Expression::Ptr(new Identifier(id));
+  }
+
+  Expression::Ptr Expression::Id(const std::string& owner, const std::string& id) {
+    return Expression::Ptr(new Identifier(owner, id));
   }
 
   void BinaryExpression::accept(Visitor& visitor) {

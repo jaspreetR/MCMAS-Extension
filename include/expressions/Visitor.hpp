@@ -107,7 +107,11 @@ namespace mcmas {
       }
 
       void visit(const Identifier& expr) {
-        result = expr.value;
+        if (expr.owner.size() == 0) {
+          result = expr.id;
+        } else {
+          result = expr.owner + "." + expr.id;
+        }
       }
 
       void visit(const UnaryExpression& expr) {

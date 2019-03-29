@@ -42,7 +42,10 @@ namespace mcmas {
 
       static Ptr Bool(bool value);
       static Ptr Int(int value);
-      static Ptr Id(const std::string& value);
+
+      static Ptr Id(const std::string& owner, const std::string& id);
+      static Ptr Id(const std::string& id);
+      
   };
 
   class BinaryExpression : public Expression {
@@ -102,9 +105,11 @@ namespace mcmas {
   class Identifier : public Expression {
     public:
       friend class Expression;
-      Identifier(const std::string value) : value(value) {}
+      Identifier(const std::string& owner, const std::string& id) : owner(owner), id(id) {}
+      Identifier(const std::string& id) : id(id) {}
 
-      std::string value;
+      std::string owner;
+      std::string id;
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
