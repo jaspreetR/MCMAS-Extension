@@ -2,6 +2,7 @@
 #define MCMAS_OPERATOR_HPP
 #include <variant>
 #include <string>
+#include <type_traits>
 
 namespace mcmas {
 
@@ -12,6 +13,8 @@ namespace mcmas {
       using Ptr = std::unique_ptr<UnaryOperator>;
       virtual EvalType apply(EvalType arg) = 0;
       virtual std::string getToken() = 0;
+
+      virtual Ptr clone() = 0;
   };
 
   class BinaryOperator {
@@ -19,6 +22,8 @@ namespace mcmas {
       using Ptr = std::unique_ptr<BinaryOperator>;
       virtual EvalType apply(EvalType left, EvalType right) = 0;
       virtual std::string getToken() = 0;
+
+      virtual Ptr clone() = 0;
   };
 
   class AndOperator : public BinaryOperator{
@@ -30,6 +35,10 @@ namespace mcmas {
       std::string getToken() {
         return "and";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class OrOperator : public BinaryOperator {
@@ -41,6 +50,10 @@ namespace mcmas {
       std::string getToken() {
         return "or";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class NotOperator : public UnaryOperator {
@@ -52,6 +65,10 @@ namespace mcmas {
       std::string getToken() {
         return "!";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class LtOperator : public BinaryOperator {
@@ -63,6 +80,10 @@ namespace mcmas {
       std::string getToken() {
         return "<";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class LeqOperator : public BinaryOperator {
@@ -74,6 +95,10 @@ namespace mcmas {
       std::string getToken() {
         return "<=";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class GtOperator : public BinaryOperator {
@@ -85,6 +110,10 @@ namespace mcmas {
       std::string getToken() {
         return ">";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class GeqOperator : public BinaryOperator {
@@ -96,6 +125,10 @@ namespace mcmas {
       std::string getToken() {
         return ">=";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class EqOperator : public BinaryOperator {
@@ -107,6 +140,10 @@ namespace mcmas {
       std::string getToken() {
         return "=";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class NeqOperator : public BinaryOperator {
@@ -118,6 +155,10 @@ namespace mcmas {
       std::string getToken() {
         return "!=";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class AddOperator : public BinaryOperator {
@@ -129,6 +170,10 @@ namespace mcmas {
       std::string getToken() {
         return "+";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class SubOperator : public BinaryOperator {
@@ -140,6 +185,10 @@ namespace mcmas {
       std::string getToken() {
         return "-";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class MulOperator : public BinaryOperator {
@@ -151,6 +200,10 @@ namespace mcmas {
       std::string getToken() {
         return "*";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class DivOperator : public BinaryOperator {
@@ -162,6 +215,10 @@ namespace mcmas {
       std::string getToken() {
         return "/";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class BitAndOperator : public BinaryOperator {
@@ -173,6 +230,10 @@ namespace mcmas {
       std::string getToken() {
         return "&";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class BitOrOperator : public BinaryOperator {
@@ -184,6 +245,10 @@ namespace mcmas {
       std::string getToken() {
         return "|";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
   
   class BitXorOperator : public BinaryOperator {
@@ -195,6 +260,10 @@ namespace mcmas {
       std::string getToken() {
         return "^";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 
   class BitNotOperator : public UnaryOperator {
@@ -206,6 +275,10 @@ namespace mcmas {
       std::string getToken() {
         return "~";
       } 
+
+      Ptr clone() {
+        return Ptr(new std::remove_reference_t<decltype(*this)>());
+      }
   };
 }
 

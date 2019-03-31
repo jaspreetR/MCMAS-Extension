@@ -7,6 +7,8 @@ namespace mcmas {
   class Evolution {
     public:
       std::vector<EvolutionLine> lines;
+
+      std::string to_string() const;
   };
 }
 

@@ -20,6 +20,8 @@ namespace mcmas {
       virtual void accept(Visitor& visitor) = 0;
       virtual void accept(ConstVisitor& visitor) const = 0;
 
+      virtual Ptr clone() const = 0;
+
       static Ptr And(Ptr&& left, Ptr&& right);
       static Ptr Or(Ptr&& left, Ptr&& right);
       static Ptr Not(Ptr&& child);
@@ -63,6 +65,8 @@ namespace mcmas {
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
+
+      Expression::Ptr clone() const;
   };
 
   class UnaryExpression : public Expression {
@@ -78,6 +82,8 @@ namespace mcmas {
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
+
+      Expression::Ptr clone() const;
   };
 
   class BoolLiteral : public Expression {
@@ -89,6 +95,8 @@ namespace mcmas {
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
+
+      Expression::Ptr clone() const;
   };
 
   class IntLiteral : public Expression {
@@ -100,6 +108,8 @@ namespace mcmas {
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
+
+      Expression::Ptr clone() const;
   };
 
   class Identifier : public Expression {
@@ -111,8 +121,13 @@ namespace mcmas {
       std::string owner;
       std::string id;
 
+      bool is_environment() const;
+      bool is_local_action() const;
+
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
+
+      Expression::Ptr clone() const;
   };
 }
 

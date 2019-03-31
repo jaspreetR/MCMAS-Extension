@@ -10,6 +10,10 @@ namespace mcmas {
     public:
       std::vector<ProtocolLine> lines;
       std::vector<std::string> other_actions;
+
+      void apply_local_action_transform(int max_x, int max_y, int comm_distance);
+
+      std::string to_string() const;
   };
 }
 

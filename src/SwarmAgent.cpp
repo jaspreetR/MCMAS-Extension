@@ -1,7 +1,16 @@
 #include "SwarmAgent.hpp"
-#include "Overload.hpp"
+#include "utils/Misc.hpp"
 
 namespace mcmas {
+
+  SwarmAgent::SwarmAgent(int max_x, int max_y, int comm_distance) 
+  : comm_distance(comm_distance),
+    max_x(max_x),
+    max_y(max_y) 
+  {
+    add_variable("pos_x", RANGED_INT(1, max_x));  
+    add_variable("pos_y", RANGED_INT(1, max_y));  
+  }
 
   void SwarmAgent::add_variable(const std::string& var_name, BaseType var_type) {
     vars[var_name] = var_type;
@@ -21,31 +30,49 @@ namespace mcmas {
     evolution.lines.emplace_back(std::move(evolution_line));
   }
 
-  std::string SwarmAgent::to_string() const {
-    std::string vars = "Vars : ";
-
-    for (auto& [id, type] : vars) {
-      std::string type_string = std::visit(Overload {
-        [](BOOL){ 
-          return "boolean";
-        },
-        [](ENUM e){ 
-          std::string enum_ids;
-          for (const auto& id : e.ids) {
-            enum_ids += " " + id + ",";
-          };
-          enum_ids.pop_back();
-          return enum_ids;
-        },
-        [](RANGED_INT i){
-          return i.min + ".." + i.max;
+  void SwarmAgent::apply_local_action_transform() {
+    std::vector<std::string> new_actions;
+    for (const auto& action : actions) {
+      for (int i = 1; i <= max_x; ++i) {
+        for (int j = 1; j <= max_y; ++j) {
+          auto local_action = generate_local_action(action, i, j);
+          new_actions.emplace_back(std::move(local_action));
         }
-      }, type);
-      vars += id + " : " + type_string + '\n';
+      }
+    }
+    actions = std::move(new_actions);
+
+    protocol.apply_local_action_transform(max_x, max_y, comm_distance);
+  }
+
+  std::string SwarmAgent::to_string() const {
+    std::string var_string = "Vars : \n";
+    for (auto& [id, type] : vars) {
+      std::string type_string = ::mcmas::to_string(type);
+      var_string += id + " : " + type_string + ";\n";
     };
+    var_string += "end Vars \n";
 
-    vars += " end Vars " + '\n';
+    std::string action_string = "Actions = { ";
+    for (auto it = actions.begin(); it != actions.end(); ++it) {
+      if (it != --actions.end()) {
+        action_string += *it + ", ";
+      } else {
+        action_string += *it + " ";
+      }
+    }
+    action_string += "};\n";
 
+    std::string protocol_string = protocol.to_string();
+
+    std::string evolution_string = evolution.to_string();
+    
+    return "Agent " + name + "\n" + 
+           var_string + 
+           action_string + 
+           protocol_string + 
+           evolution_string +
+           "end Agent\n";
   }
 
 }

@@ -113,12 +113,20 @@ namespace mcmas {
     visitor.visit(*this);
   }
 
+  Expression::Ptr BinaryExpression::clone() const {
+    return Expression::Ptr(new BinaryExpression(left->clone(), right->clone(), op->clone()));
+  }
+
   void UnaryExpression::accept(Visitor& visitor) {
     visitor.visit(*this);
   }
 
   void UnaryExpression::accept(ConstVisitor& visitor) const {
     visitor.visit(*this);
+  }
+
+  Expression::Ptr UnaryExpression::clone() const {
+    return Expression::Ptr(new UnaryExpression(child->clone(), op->clone()));
   }
 
   void BoolLiteral::accept(Visitor& visitor) {
@@ -129,6 +137,10 @@ namespace mcmas {
     visitor.visit(*this);
   }
 
+  Expression::Ptr BoolLiteral::clone() const {
+    return Expression::Ptr(new BoolLiteral(value));
+  }
+
   void IntLiteral::accept(Visitor& visitor) {
     visitor.visit(*this);
   }
@@ -137,11 +149,27 @@ namespace mcmas {
     visitor.visit(*this);
   }
 
+  Expression::Ptr IntLiteral::clone() const {
+    return Expression::Ptr(new IntLiteral(value));
+  }
+
   void Identifier::accept(Visitor& visitor) {
     visitor.visit(*this);
   }
 
   void Identifier::accept(ConstVisitor& visitor) const {
     visitor.visit(*this);
+  }
+
+  Expression::Ptr Identifier::clone() const {
+    return Expression::Ptr(new Identifier(owner, id));
+  }
+
+  bool Identifier::is_environment() const {
+    return owner == "Environment";
+  }
+
+  bool Identifier::is_local_action() const {
+    return owner == "" && id == "LocalAction";
   }
 }

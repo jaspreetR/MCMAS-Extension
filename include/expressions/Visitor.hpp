@@ -131,6 +131,7 @@ namespace mcmas {
         result = "(" + left_result + " " + expr.op->getToken() + " " + right_result + ")";
       }
   };
+
 }
 
 #endif

@@ -13,6 +13,8 @@ namespace mcmas {
       : result(std::move(result)),
         condition(std::move(condition))
       {}
+
+      std::string to_string() const;
   };
 
 }

@@ -2,6 +2,8 @@
 #define MCMAS_BASETYPE_HPP
 #include <variant>
 #include <set>
+#include <string>
+#include "utils/Overload.hpp"
 
 namespace mcmas {
 
@@ -15,9 +17,14 @@ namespace mcmas {
   struct RANGED_INT {
     int min;
     int max;
+
+    RANGED_INT() = default;
+    RANGED_INT(int min, int max) : min(min), max(max) {}
   };
 
   using BaseType = std::variant<BOOL, ENUM, RANGED_INT>;
+
+  std::string to_string(const BaseType& type);
 }
 
 #endif
