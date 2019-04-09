@@ -1,5 +1,5 @@
 #include "EvolutionLine.hpp"
-#include "expressions/Visitor.hpp"
+#include "visitors/StringVisitor.hpp"
 
 namespace mcmas {
 

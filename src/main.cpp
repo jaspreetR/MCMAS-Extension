@@ -2,8 +2,13 @@
 #include <iostream>
 
 #include "expressions/Expression.hpp"
-#include "expressions/Visitor.hpp"
+#include "visitors/Visitor.hpp"
+#include "utils/Overload.hpp"
+#include "utils/Misc.hpp"
 #include "SwarmAgent.hpp"
+#include "utils/DynamicBitset.hpp"
+
+using mcmas::Expression;
 
 int main(int argc, char** argv) {
   std::cout << std::boolalpha;
@@ -44,4 +49,75 @@ int main(int argc, char** argv) {
   agent.apply_local_action_transform();
   std::cout << agent.to_string() << std::endl;
 
+  auto states = agent.get_all_states();
+  auto eval_expr = Expression::Add(Expression::Id("pos_x"), Expression::Int(3));
+
+  for (const auto& state : states) {
+    for (const auto& [name, value] : state.get()) {
+      std::visit([&](auto&& value){
+        std::cout << name << " " << value << ", ";
+      }, value);
+    }
+
+    std::cout << std::get<int>(state.evaluate(eval_expr.get()));
+    std::cout << std::endl;
+  }
+
+  mcmas::DynamicBitset bitset(2);
+  for (size_t i = 0; i < 1u << bitset.size(); ++i) {
+    std::cout << bitset.to_string() << std::endl;
+    ++bitset;
+  }
+  std::cout << bitset.to_string() << std::endl;
+
+  auto apply_expr = Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))); 
+  auto apply_expr2 = Expression::Eq(Expression::Id("pos_x"), Expression::Sub(Expression::Id("pos_x"), Expression::Int(1))); 
+  auto new_state = states[0].apply(apply_expr.get());
+
+  for (const auto& [name, value] : new_state.get()) {
+    std::visit([&](auto&& value){
+      std::cout << name << " " << value << ", ";
+    }, value);
+  }
+  std::cout << std::endl;
+
+  std::vector<std::vector<int>> new_states(states.size());
+  std::vector<Expression::Ptr> exprs;
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(-1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_x"), Expression::Int(-1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("bit"), Expression::Not(Expression::Id("bit"))));
+
+  for (size_t i = 0; i < states.size(); ++i) {
+    const auto& state = states[i];
+    for (const auto& expr : exprs) {
+      auto new_state = state.apply(expr.get());
+      for (size_t j = 0; j < states.size(); ++j) {
+        if (new_state == states[j]) {
+          new_states[i].push_back(j);
+          break;
+        }
+      }
+    }
+  }
+
+  for (size_t i = 0; i < new_states.size(); ++i) {
+    std::cout << i << ": "; 
+    for (auto j : new_states[i]) {
+      std::cout << j << " ";
+    } 
+    std::cout << std::endl;
+  }
+
+  auto product = mcmas::cartesian_product(std::vector(2, std::vector{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+  /*
+  for (auto& elem : product) {
+    for (auto i : elem) {
+      std::cout << i << " ";
+    }
+    std::cout << std::endl;
+  }
+  */
+  std::cout << product[0][0] << std::endl;
 }

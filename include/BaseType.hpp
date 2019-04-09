@@ -1,6 +1,7 @@
 #ifndef MCMAS_BASETYPE_HPP
 #define MCMAS_BASETYPE_HPP
 #include <variant>
+#include <vector>
 #include <set>
 #include <string>
 #include "utils/Overload.hpp"
@@ -23,8 +24,10 @@ namespace mcmas {
   };
 
   using BaseType = std::variant<BOOL, ENUM, RANGED_INT>;
+  using IntBoolVector = std::variant<std::vector<int>, std::vector<bool>>;
 
   std::string to_string(const BaseType& type);
+  IntBoolVector generate_possible_values(const BaseType& type);
 }
 
 #endif

@@ -1,4 +1,4 @@
-#include "expressions/Visitor.hpp"
+#include "visitors/Visitor.hpp"
 #include "expressions/Expression.hpp"
 
 namespace mcmas {

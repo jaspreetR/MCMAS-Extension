@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include "AgentState.hpp"
 #include "BaseType.hpp"
 #include "Protocol.hpp"
 #include "Evolution.hpp"
@@ -31,6 +32,7 @@ namespace mcmas {
       void add_evolution_line(Expression::Ptr&& result, Expression::Ptr&& condition);
 
       void apply_local_action_transform();
+      std::vector<AgentState> get_all_states();
 
       std::string to_string() const;
   };

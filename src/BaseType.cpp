@@ -26,4 +26,21 @@ namespace mcmas {
     return type_string;
   }
 
+  IntBoolVector generate_possible_values(const BaseType& type) {
+    return std::visit(Overload {
+      [](const BOOL) -> IntBoolVector {
+        return {std::vector<bool>{false, true}};
+      },
+      [](const ENUM) -> IntBoolVector {
+        // TODO
+        return {std::vector<int>()};
+      },
+      [](const RANGED_INT i) -> IntBoolVector {
+        std::vector<int> range;
+        for (int x = i.min; x <= i.max; ++x) { range.push_back(x); }
+        return {range};
+      }
+    }, type);
+  }
+
 }

@@ -3,6 +3,10 @@
 
 namespace mcmas {
 
+  std::vector<AgentState> variable_cartesian_product(const std::vector<AgentState>& current_states, 
+                                                const std::string& var_name, 
+                                                const IntBoolVector& values);
+
   SwarmAgent::SwarmAgent(int max_x, int max_y, int comm_distance) 
   : comm_distance(comm_distance),
     max_x(max_x),
@@ -43,6 +47,32 @@ namespace mcmas {
     actions = std::move(new_actions);
 
     protocol.apply_local_action_transform(max_x, max_y, comm_distance);
+  }
+
+  std::vector<AgentState> SwarmAgent::get_all_states() {
+    std::vector<AgentState> states(1);    
+    for (const auto& [name, type] : vars) {
+      auto possible_values = ::mcmas::generate_possible_values(type);
+      states = variable_cartesian_product(states, name, possible_values);
+    }
+    return states;
+  }
+
+  std::vector<AgentState> variable_cartesian_product(const std::vector<AgentState>& current_states, 
+                                                const std::string& var_name, 
+                                                const IntBoolVector& values)
+  {
+    std::vector<AgentState> new_states;
+    for (const auto& current_state : current_states) {
+      std::visit([&](auto&& values) {
+        for (auto value : values) {
+          auto new_state = current_state.get();
+          new_state[var_name] = value;
+          new_states.emplace_back(std::move(new_state));
+        }
+      }, values);
+    }
+    return new_states;
   }
 
   std::string SwarmAgent::to_string() const {

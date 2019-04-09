@@ -2,6 +2,7 @@
 #define MCMAS_EXPRESSION_HPP
 #include <variant>
 #include <string>
+#include <vector>
 #include "utils/DeepPtr.hpp"
 #include "Operator.hpp"
 
@@ -23,7 +24,9 @@ namespace mcmas {
       virtual Ptr clone() const = 0;
 
       static Ptr And(Ptr&& left, Ptr&& right);
+      static Ptr And(std::vector<Ptr>&& args);
       static Ptr Or(Ptr&& left, Ptr&& right);
+      static Ptr Or(std::vector<Ptr>&& args);
       static Ptr Not(Ptr&& child);
 
       static Ptr Lt(Ptr&& left, Ptr&& right);

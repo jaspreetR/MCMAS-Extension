@@ -1,6 +1,7 @@
 #include "expressions/Expression.hpp"
 #include "expressions/Operator.hpp"
-#include "expressions/Visitor.hpp"
+#include "visitors/Visitor.hpp"
+#include <cassert>
 
 namespace mcmas {
 
@@ -9,9 +10,33 @@ namespace mcmas {
     return Expression::Ptr(new BinaryExpression(std::move(left), std::move(right), std::move(op)));
   }
 
+  Expression::Ptr Expression::And(std::vector<Expression::Ptr>&& args) {
+    assert(args.size() >= 2);
+
+    auto last = std::move(*args.rbegin());
+    auto second_last = std::move(*(args.rbegin()+1));
+    auto result = And(std::move(second_last), std::move(last));
+    for (auto it = args.rbegin()+2; it != args.rend(); ++it) {
+      result = And(std::move(*it), std::move(result));
+    }
+    return result;
+  }
+
   Expression::Ptr Expression::Or(Expression::Ptr&& left, Expression::Ptr&& right) {
     BinaryOperator::Ptr op(new OrOperator());
     return Expression::Ptr(new BinaryExpression(std::move(left), std::move(right), std::move(op)));
+  }
+
+  Expression::Ptr Expression::Or(std::vector<Expression::Ptr>&& args) {
+    assert(args.size() >= 2);
+
+    auto last = std::move(*args.rbegin());
+    auto second_last = std::move(*(args.rbegin()+1));
+    auto result = Or(std::move(second_last), std::move(last));
+    for (auto it = args.rbegin()+2; it != args.rend(); ++it) {
+      result = Or(std::move(*it), std::move(result));
+    }
+    return result;
   }
 
   Expression::Ptr Expression::Not(Expression::Ptr&& child) {
