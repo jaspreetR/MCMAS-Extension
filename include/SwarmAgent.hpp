@@ -31,8 +31,10 @@ namespace mcmas {
       void add_protocol_line(Expression::Ptr&& condition, const std::vector<std::string>& actions);
       void add_evolution_line(Expression::Ptr&& result, Expression::Ptr&& condition);
 
-      void apply_local_action_transform();
+      void apply_local_action_transform(const std::vector<std::string>& agent_names);
       std::vector<AgentState> get_all_states();
+
+      std::vector<SwarmAgent> generate_n_agents();
 
       std::string to_string() const;
   };

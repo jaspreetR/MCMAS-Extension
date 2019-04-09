@@ -34,7 +34,7 @@ namespace mcmas {
     evolution.lines.emplace_back(std::move(evolution_line));
   }
 
-  void SwarmAgent::apply_local_action_transform() {
+  void SwarmAgent::apply_local_action_transform(const std::vector<std::string>& agent_names) {
     std::vector<std::string> new_actions;
     for (const auto& action : actions) {
       for (int i = 1; i <= max_x; ++i) {
@@ -47,6 +47,7 @@ namespace mcmas {
     actions = std::move(new_actions);
 
     protocol.apply_local_action_transform(max_x, max_y, comm_distance);
+    evolution.apply_local_action_transform(agent_names, max_x, max_y, comm_distance);
   }
 
   std::vector<AgentState> SwarmAgent::get_all_states() {

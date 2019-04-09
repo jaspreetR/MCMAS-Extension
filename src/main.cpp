@@ -37,16 +37,17 @@ int main(int argc, char** argv) {
   std::cout << std::get<int>(eval_visitor.result) << std::endl;
   */
 
-  mcmas::SwarmAgent agent(2, 2, 1);
+  mcmas::SwarmAgent agent(3, 3, 1);
   agent.name = "TestAgent";
   agent.add_actions({"flip", "none"});
   agent.add_variable("bit", mcmas::BOOL());
   agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(false)), {"flip"});
   agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(true)), {"none"});
+  agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Bool(true)), Expression::Eq(Expression::Id("LocalAction"), Expression::Id("flip")));
   std::cout << agent.to_string() << std::endl;
   std::cout << std::endl;
 
-  agent.apply_local_action_transform();
+  agent.apply_local_action_transform({"a", "b"});
   std::cout << agent.to_string() << std::endl;
 
   auto states = agent.get_all_states();
