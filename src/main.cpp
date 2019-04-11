@@ -3,6 +3,7 @@
 
 #include "expressions/Expression.hpp"
 #include "visitors/Visitor.hpp"
+#include "visitors/StringVisitor.hpp"
 #include "utils/Overload.hpp"
 #include "utils/Misc.hpp"
 #include "SwarmAgent.hpp"
@@ -111,14 +112,16 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
   }
 
-  auto product = mcmas::cartesian_product(std::vector(2, std::vector{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-  /*
-  for (auto& elem : product) {
-    for (auto i : elem) {
-      std::cout << i << " ";
-    }
-    std::cout << std::endl;
-  }
-  */
-  std::cout << product[0][0] << std::endl;
+  mcmas::StringVisitor string_visitor;
+  mcmas::AgentState state;
+  state.set_value("i", 1);
+  state.set_value("j", 2);
+
+  auto subst_expr = Expression::Eq(Expression::Id("i"), Expression::Id("j"));
+  subst_expr->accept(string_visitor);
+  std::cout << string_visitor.result << std::endl;
+
+  auto subst_expr2 = state.substitute(subst_expr.get());
+  subst_expr2->accept(string_visitor);
+  std::cout << string_visitor.result << std::endl;
 }

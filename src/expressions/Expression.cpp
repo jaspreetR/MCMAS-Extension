@@ -190,11 +190,19 @@ namespace mcmas {
     return Expression::Ptr(new Identifier(owner, id));
   }
 
+  bool Identifier::is_current_agent() const {
+    return owner == "";
+  }
+
   bool Identifier::is_environment() const {
     return owner == "Environment";
   }
 
   bool Identifier::is_local_action() const {
     return owner == "" && id == "LocalAction";
+  }
+
+  bool Identifier::is_action() const {
+    return id == "Action";
   }
 }

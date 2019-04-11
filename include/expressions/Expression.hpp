@@ -124,8 +124,10 @@ namespace mcmas {
       std::string owner;
       std::string id;
 
+      bool is_current_agent() const;
       bool is_environment() const;
       bool is_local_action() const;
+      bool is_action() const;
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;
