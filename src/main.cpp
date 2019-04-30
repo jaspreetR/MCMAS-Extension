@@ -4,9 +4,11 @@
 #include "expressions/Expression.hpp"
 #include "visitors/Visitor.hpp"
 #include "visitors/StringVisitor.hpp"
+#include "visitors/GlobalActionVisitor.hpp"
 #include "utils/Overload.hpp"
 #include "utils/Misc.hpp"
 #include "SwarmAgent.hpp"
+#include "AbstractAgent.hpp"
 #include "utils/DynamicBitset.hpp"
 
 using mcmas::Expression;
@@ -48,8 +50,20 @@ int main(int argc, char** argv) {
   std::cout << agent.to_string() << std::endl;
   std::cout << std::endl;
 
-  agent.apply_local_action_transform({"a", "b"});
+  agent.apply_local_action_transform();
+  auto agent2 = agent.clone();
+  agent2.name = "TestAgent2";
+
+  mcmas::GlobalActionVisitor gav;
+  gav.add_actions_from_sa(agent);
+  gav.add_actions_from_sa(agent2);
+  agent.apply_global_action_transform(gav);
+  agent2.apply_global_action_transform(gav);
+
   std::cout << agent.to_string() << std::endl;
+  std::cout << std::endl;
+  std::cout << agent2.to_string() << std::endl;
+  std::cout << std::endl;
 
   auto states = agent.get_all_states();
   auto eval_expr = Expression::Add(Expression::Id("pos_x"), Expression::Int(3));
@@ -65,12 +79,36 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
   }
 
+  mcmas::SwarmAgent simple_agent(3, 3, 1);
+  simple_agent.name = "TestAgent";
+  simple_agent.add_actions({"flip", "none"});
+  simple_agent.add_variable("bit", mcmas::BOOL());
+  simple_agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(false)), {"flip"});
+  simple_agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(true)), {"none"});
+  simple_agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Bool(true)), Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("flip")));
+  std::cout << simple_agent.to_string() << std::endl;
+  std::cout << std::endl;
+
+  mcmas::AbstractAgent abstract_agent(states[0], simple_agent, 0);
+  std::cout << abstract_agent.to_string() << std::endl;
+  std::cout << std::endl;
+
   mcmas::DynamicBitset bitset(2);
   for (size_t i = 0; i < 1u << bitset.size(); ++i) {
     std::cout << bitset.to_string() << std::endl;
     ++bitset;
   }
   std::cout << bitset.to_string() << std::endl;
+
+  std::vector<int> super_set = {1, 2, 3};
+  auto power_set = mcmas::power_set(super_set);
+  for (auto& subset : power_set) {
+    for (auto val : subset) {
+      std::cout << val << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << std::endl;
 
   auto apply_expr = Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))); 
   auto apply_expr2 = Expression::Eq(Expression::Id("pos_x"), Expression::Sub(Expression::Id("pos_x"), Expression::Int(1))); 
@@ -87,8 +125,8 @@ int main(int argc, char** argv) {
   std::vector<Expression::Ptr> exprs;
   exprs.emplace_back(Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))));
   exprs.emplace_back(Expression::Eq(Expression::Id("pos_x"), Expression::Add(Expression::Id("pos_x"), Expression::Int(-1))));
-  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_x"), Expression::Int(1))));
-  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_x"), Expression::Int(-1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_y"), Expression::Int(1))));
+  exprs.emplace_back(Expression::Eq(Expression::Id("pos_y"), Expression::Add(Expression::Id("pos_y"), Expression::Int(-1))));
   exprs.emplace_back(Expression::Eq(Expression::Id("bit"), Expression::Not(Expression::Id("bit"))));
 
   for (size_t i = 0; i < states.size(); ++i) {
@@ -97,7 +135,7 @@ int main(int argc, char** argv) {
       auto new_state = state.apply(expr.get());
       for (size_t j = 0; j < states.size(); ++j) {
         if (new_state == states[j]) {
-          new_states[i].push_back(j);
+          new_states[j].push_back(i);
           break;
         }
       }

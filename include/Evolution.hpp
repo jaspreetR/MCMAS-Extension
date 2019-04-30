@@ -4,14 +4,18 @@
 #include "EvolutionLine.hpp"
 
 namespace mcmas {
+  class GlobalActionVisitor;
+
   class Evolution {
     public:
       std::vector<EvolutionLine> lines;
 
-      void apply_local_action_transform(const std::vector<std::string>& agent_names, 
-                                        int max_x, int max_y, int comm_distance);
+      void apply_local_action_transform(int max_x, int max_y, int comm_distance);
+      void apply_global_action_transform(GlobalActionVisitor& visitor);
       
       std::string to_string() const;
+
+      Evolution clone() const;
   };
 }
 

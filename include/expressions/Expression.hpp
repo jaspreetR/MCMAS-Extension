@@ -23,6 +23,8 @@ namespace mcmas {
 
       virtual Ptr clone() const = 0;
 
+      std::string to_string() const;
+
       static Ptr And(Ptr&& left, Ptr&& right);
       static Ptr And(std::vector<Ptr>&& args);
       static Ptr Or(Ptr&& left, Ptr&& right);
@@ -125,9 +127,10 @@ namespace mcmas {
       std::string id;
 
       bool is_current_agent() const;
-      bool is_environment() const;
+      bool is_environment_action() const;
       bool is_local_action() const;
-      bool is_action() const;
+      bool is_global_action() const;
+      bool is_owner_action() const;
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;

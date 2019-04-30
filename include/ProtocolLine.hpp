@@ -16,6 +16,8 @@ namespace mcmas {
       {}
 
       std::string to_string() const;
+
+      ProtocolLine clone() const;
   };
 }
 

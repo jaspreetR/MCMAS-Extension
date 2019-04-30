@@ -15,6 +15,8 @@ namespace mcmas {
       {}
 
       std::string to_string() const;
+
+      EvolutionLine clone() const;
   };
 
 }

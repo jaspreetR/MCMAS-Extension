@@ -15,13 +15,11 @@ namespace mcmas {
       int max_x;
       int max_y;
       int comm_distance;
-      const std::vector<std::string>& agent_names;
       Expression::Ptr result;
 
-      LocalActionVisitor(int i, int j, int max_x, int max_y, int comm_distance, 
-                         const std::vector<std::string>& agent_names) 
+      LocalActionVisitor(int i, int j, int max_x, int max_y, int comm_distance) 
       : i(i), j(j), max_x(max_x), max_y(max_y), 
-        comm_distance(comm_distance), agent_names(agent_names) {}
+        comm_distance(comm_distance) {}
 
       void visit(const IntLiteral& expr) {
         result = expr.clone();
@@ -46,7 +44,7 @@ namespace mcmas {
           auto* left_id = dynamic_cast<Identifier*>(expr.left.get());
           if (left_id && left_id->is_local_action()) {
             auto* action_id = static_cast<Identifier*>(expr.right.get());
-            result = generate_local_action_expression(agent_names, action_id->id, i, j, max_x, max_y, comm_distance);
+            result = generate_local_action_expression(action_id->id, i, j, max_x, max_y, comm_distance);
             return;
           }
         }

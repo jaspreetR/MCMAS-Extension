@@ -4,9 +4,7 @@
 namespace mcmas {
 
   std::string ProtocolLine::to_string() const {
-    StringVisitor string_visitor;
-    condition->accept(string_visitor);
-    std::string condition_string = string_visitor.result;
+    std::string condition_string = condition->to_string();
     
     std::string actions_string = "{ ";
     for (auto it = enabled_actions.begin(); it != enabled_actions.end(); ++it) {
@@ -19,6 +17,11 @@ namespace mcmas {
     actions_string += "}"; 
 
     return condition_string + " : " + actions_string + ";\n";
+  }
+
+  ProtocolLine ProtocolLine::clone() const {
+    auto line = ProtocolLine(this->condition->clone(), enabled_actions);
+    return line;
   }
 
 }

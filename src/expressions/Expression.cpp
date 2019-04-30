@@ -1,9 +1,16 @@
 #include "expressions/Expression.hpp"
 #include "expressions/Operator.hpp"
 #include "visitors/Visitor.hpp"
+#include "visitors/StringVisitor.hpp"
 #include <cassert>
 
 namespace mcmas {
+
+  std::string Expression::to_string() const {
+    auto visitor = StringVisitor();
+    this->accept(visitor);
+    return std::move(visitor.result);
+  }
 
   Expression::Ptr Expression::And(Expression::Ptr&& left, Expression::Ptr&& right) {
     BinaryOperator::Ptr op(new AndOperator());
@@ -194,15 +201,19 @@ namespace mcmas {
     return owner == "";
   }
 
-  bool Identifier::is_environment() const {
-    return owner == "Environment";
+  bool Identifier::is_environment_action() const {
+    return owner == "Environment" && id == "Action";
   }
 
   bool Identifier::is_local_action() const {
     return owner == "" && id == "LocalAction";
   }
 
-  bool Identifier::is_action() const {
-    return id == "Action";
+  bool Identifier::is_global_action() const {
+    return owner == "" && id == "GlobalAction";
+  }
+
+  bool Identifier::is_owner_action() const {
+    return owner == "" && id == "Action";
   }
 }

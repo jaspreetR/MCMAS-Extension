@@ -1,5 +1,6 @@
 #include "SwarmAgent.hpp"
 #include "utils/Misc.hpp"
+#include "visitors/GlobalActionVisitor.hpp"
 
 namespace mcmas {
 
@@ -34,7 +35,7 @@ namespace mcmas {
     evolution.lines.emplace_back(std::move(evolution_line));
   }
 
-  void SwarmAgent::apply_local_action_transform(const std::vector<std::string>& agent_names) {
+  void SwarmAgent::apply_local_action_transform() {
     std::vector<std::string> new_actions;
     for (const auto& action : actions) {
       for (int i = 1; i <= max_x; ++i) {
@@ -47,7 +48,11 @@ namespace mcmas {
     actions = std::move(new_actions);
 
     protocol.apply_local_action_transform(max_x, max_y, comm_distance);
-    evolution.apply_local_action_transform(agent_names, max_x, max_y, comm_distance);
+    evolution.apply_local_action_transform(max_x, max_y, comm_distance);
+  }
+
+  void SwarmAgent::apply_global_action_transform(GlobalActionVisitor& visitor) {
+    evolution.apply_global_action_transform(visitor);
   }
 
   std::vector<AgentState> SwarmAgent::get_all_states() {
@@ -106,4 +111,14 @@ namespace mcmas {
            "end Agent\n";
   }
 
+  SwarmAgent SwarmAgent::clone() const {
+    SwarmAgent result(comm_distance, max_x, max_y);
+    result.name = name;
+    result.vars = vars;
+    result.actions = actions;
+    result.protocol = protocol.clone();
+    result.evolution = evolution.clone();
+
+    return result;
+  }
 }

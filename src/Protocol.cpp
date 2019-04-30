@@ -38,4 +38,17 @@ namespace mcmas {
     return protocol_string;
   }
 
+  Protocol Protocol::clone() const {
+    std::vector<ProtocolLine> new_lines;
+    new_lines.reserve(lines.size());
+
+    for (const auto& line : lines) {
+      new_lines.emplace_back(line.clone());
+    }
+
+    Protocol result;
+    result.lines = std::move(new_lines);
+    result.other_actions = other_actions;
+    return result;
+  }
 }
