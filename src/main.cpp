@@ -40,17 +40,18 @@ int main(int argc, char** argv) {
   std::cout << std::get<int>(eval_visitor.result) << std::endl;
   */
 
-  mcmas::SwarmAgent agent(3, 3, 1);
+  mcmas::SwarmAgent agent;
   agent.name = "TestAgent";
   agent.add_actions({"flip", "none"});
   agent.add_variable("bit", mcmas::BOOL());
+  agent.add_2d_position_variables(3, 3);
   agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(false)), {"flip"});
   agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(true)), {"none"});
   agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Bool(true)), Expression::Eq(Expression::Id("LocalAction"), Expression::Id("flip")));
   std::cout << agent.to_string() << std::endl;
   std::cout << std::endl;
 
-  agent.apply_local_action_transform();
+  agent.apply_local_action_transform(1);
   auto agent2 = agent.clone();
   agent2.name = "TestAgent2";
 
@@ -79,19 +80,29 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
   }
 
-  mcmas::SwarmAgent simple_agent(3, 3, 1);
+  mcmas::SwarmAgent simple_agent;
   simple_agent.name = "TestAgent";
-  simple_agent.add_actions({"flip", "none"});
+  simple_agent.add_actions({"zzz", "flip", "none"});
   simple_agent.add_variable("bit", mcmas::BOOL());
+  simple_agent.add_variable("jib", mcmas::BOOL());
   simple_agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(false)), {"flip"});
-  simple_agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("bit"), mcmas::Expression::Bool(true)), {"none"});
+  simple_agent.add_protocol_line(mcmas::Expression::Eq(mcmas::Expression::Id("jib"), mcmas::Expression::Bool(true)), {"none"});
   simple_agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Bool(true)), Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("flip")));
   std::cout << simple_agent.to_string() << std::endl;
   std::cout << std::endl;
 
-  mcmas::AbstractAgent abstract_agent(states[0], simple_agent, 0);
+  /*
+  auto simple_agent_state = simple_agent.get_all_states();
+  mcmas::AbstractAgent abstract_agent(simple_agent_state[0], simple_agent, 0);
   std::cout << abstract_agent.to_string() << std::endl;
   std::cout << std::endl;
+  */
+
+  auto simple_agent_abstracts = simple_agent.generate_abstract_agents();
+
+  for (const auto& abstract_agent : simple_agent_abstracts) {
+    std::cout << abstract_agent.to_string() << std::endl << std::endl;
+  }
 
   mcmas::DynamicBitset bitset(2);
   for (size_t i = 0; i < 1u << bitset.size(); ++i) {

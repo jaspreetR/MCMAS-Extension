@@ -131,6 +131,7 @@ namespace mcmas {
       bool is_local_action() const;
       bool is_global_action() const;
       bool is_owner_action() const;
+      bool is_action() const;
 
       void accept(Visitor& visitor);
       void accept(ConstVisitor& visitor) const;

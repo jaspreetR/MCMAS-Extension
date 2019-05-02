@@ -50,7 +50,7 @@ namespace mcmas {
         Expression::Ptr right_result;
 
         auto* left_id = dynamic_cast<Identifier*>(expr.left.get());
-        if (left_id && left_id->is_current_agent()) {
+        if (left_id && left_id->is_current_agent() && !left_id->is_action()) {
           auto var_value = state->get_value(left_id->id);
           left_result = value_to_expr(var_value);
         } else {
@@ -59,7 +59,7 @@ namespace mcmas {
         }
 
         auto* right_id = dynamic_cast<Identifier*>(expr.right.get());
-        if (right_id && right_id->is_current_agent()) {
+        if (right_id && right_id->is_current_agent() && !left_id->is_action()) {
           auto var_value = state->get_value(right_id->id);
           right_result = value_to_expr(var_value);
         } else {

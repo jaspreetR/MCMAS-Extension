@@ -1,6 +1,8 @@
 #include "SwarmAgent.hpp"
+#include <cassert>
 #include "utils/Misc.hpp"
 #include "visitors/GlobalActionVisitor.hpp"
+#include "AbstractAgent.hpp"
 
 namespace mcmas {
 
@@ -8,11 +10,10 @@ namespace mcmas {
                                                 const std::string& var_name, 
                                                 const IntBoolVector& values);
 
-  SwarmAgent::SwarmAgent(int max_x, int max_y, int comm_distance) 
-  : comm_distance(comm_distance),
-    max_x(max_x),
-    max_y(max_y) 
-  {
+  SwarmAgent::SwarmAgent() {
+  }
+
+  void SwarmAgent::add_2d_position_variables(int max_x, int max_y) {
     add_variable("pos_x", RANGED_INT(1, max_x));  
     add_variable("pos_y", RANGED_INT(1, max_y));  
   }
@@ -35,7 +36,12 @@ namespace mcmas {
     evolution.lines.emplace_back(std::move(evolution_line));
   }
 
-  void SwarmAgent::apply_local_action_transform() {
+  void SwarmAgent::apply_local_action_transform(int comm_distance) {
+    assert(vars.find("pos_x") != vars.end() && vars.find("pos_x") != vars.end());
+
+    int max_x = std::get<RANGED_INT>(vars["pos_x"]).max;
+    int max_y = std::get<RANGED_INT>(vars["pos_y"]).max;
+
     std::vector<std::string> new_actions;
     for (const auto& action : actions) {
       for (int i = 1; i <= max_x; ++i) {
@@ -62,6 +68,67 @@ namespace mcmas {
       states = variable_cartesian_product(states, name, possible_values);
     }
     return states;
+  }
+
+  std::vector<AbstractAgent> SwarmAgent::generate_abstract_agents() {
+
+    std::vector<Expression*> ev_transitions;
+    ev_transitions.reserve(evolution.lines.size());
+    
+    std::vector<Expression*> ev_conditions;
+    ev_conditions.reserve(evolution.lines.size());
+
+    for (const auto& line : evolution.lines) {
+      ev_transitions.push_back(line.result.get());
+      ev_conditions.push_back(line.condition.get());
+    }
+
+    auto states = get_all_states();
+
+    std::vector<std::vector<Expression::Ptr>> activation_conditions(states.size());
+
+    for (const auto& state : states) {
+      for (size_t i = 0; i < ev_transitions.size(); ++i) {
+        auto* transition = ev_transitions[i];
+        auto new_state = state.apply(transition);
+
+        // TODO: quadratic complexity could be n log n
+        for (size_t j = 0; j < states.size(); ++j) {
+          if (new_state == states[j]) {
+            activation_conditions[j].push_back(state.substitute(ev_conditions[i]));
+            break;
+          }
+        }
+      }
+    }
+
+    std::vector<Expression::Ptr> disjunct_activation_conditions;
+    disjunct_activation_conditions.reserve(activation_conditions.size());
+    for (auto& conditions : activation_conditions) {
+      Expression::Ptr disjunct_activation_condition;
+
+      if (conditions.size() >= 2) {
+        disjunct_activation_condition = Expression::Or(std::move(conditions));
+      } else if (conditions.size() == 1) {
+        disjunct_activation_condition = std::move(conditions[0]);
+      } else if (conditions.size() == 0) {
+        disjunct_activation_condition = Expression::Bool(false);
+      } else {
+        std::cout << "should not reach here" << std::endl;
+      }
+
+      disjunct_activation_conditions.emplace_back(std::move(disjunct_activation_condition));
+    }
+
+    std::vector<AbstractAgent> result;
+    result.reserve(states.size());
+
+    for (size_t i = 0; i < states.size(); ++i) {
+      auto agent = AbstractAgent(states[i], *this, std::move(disjunct_activation_conditions[i]), i);
+      result.emplace_back(std::move(agent));
+    }
+
+    return result;
   }
 
   std::vector<AgentState> variable_cartesian_product(const std::vector<AgentState>& current_states, 
@@ -112,7 +179,7 @@ namespace mcmas {
   }
 
   SwarmAgent SwarmAgent::clone() const {
-    SwarmAgent result(comm_distance, max_x, max_y);
+    SwarmAgent result;
     result.name = name;
     result.vars = vars;
     result.actions = actions;
@@ -121,4 +188,5 @@ namespace mcmas {
 
     return result;
   }
+
 }

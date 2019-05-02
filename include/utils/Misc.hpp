@@ -93,6 +93,20 @@ namespace mcmas {
 
     return result;
   }
+
+  inline std::string concat_strings(const std::vector<std::string>& words, const std::string& delim = "__") {
+    std::string result;
+
+    for (const auto& action : words) {
+      if (result.size() == 0) {
+        result += action;
+      } else {
+        result += "__" + action;
+      }
+    }
+
+    return result;
+  }
   
 } // namespace mcmas
 

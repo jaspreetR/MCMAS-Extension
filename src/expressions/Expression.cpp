@@ -216,4 +216,8 @@ namespace mcmas {
   bool Identifier::is_owner_action() const {
     return owner == "" && id == "Action";
   }
+
+  bool Identifier::is_action() const {
+    return is_local_action() || is_global_action() || is_environment_action() || is_owner_action();
+  }
 }

@@ -15,6 +15,9 @@ namespace mcmas {
         enabled_actions(enabled_actions)
       {}
 
+      // TODO: rule of five
+      ProtocolLine(const ProtocolLine& other);
+
       std::string to_string() const;
 
       ProtocolLine clone() const;

@@ -1,6 +1,14 @@
 #include "EvolutionLine.hpp"
+#include <iostream>
 
 namespace mcmas {
+
+  // TODO: i dont think this should be needed since this does not need to copied afaik
+  EvolutionLine::EvolutionLine(const EvolutionLine& other) {
+    auto line = other.clone();
+    result = std::move(line.result);
+    condition = std::move(line.condition);
+  }
 
   std::string EvolutionLine::to_string() const {
     std::string result_string = result->to_string();
