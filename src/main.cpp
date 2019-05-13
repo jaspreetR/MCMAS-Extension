@@ -9,6 +9,8 @@
 #include "utils/Misc.hpp"
 #include "SwarmAgent.hpp"
 #include "AbstractAgent.hpp"
+#include "Evaluation.hpp"
+#include "SwarmSystem.hpp"
 #include "utils/DynamicBitset.hpp"
 
 using mcmas::Expression;
@@ -40,6 +42,7 @@ int main(int argc, char** argv) {
   std::cout << std::get<int>(eval_visitor.result) << std::endl;
   */
 
+  /*
   mcmas::SwarmAgent agent;
   agent.name = "TestAgent";
   agent.add_actions({"flip", "none"});
@@ -91,12 +94,16 @@ int main(int argc, char** argv) {
   std::cout << simple_agent.to_string() << std::endl;
   std::cout << std::endl;
 
+  */
+
   /*
   auto simple_agent_state = simple_agent.get_all_states();
   mcmas::AbstractAgent abstract_agent(simple_agent_state[0], simple_agent, 0);
   std::cout << abstract_agent.to_string() << std::endl;
   std::cout << std::endl;
   */
+
+  /*
 
   auto simple_agent_abstracts = simple_agent.generate_abstract_agents();
 
@@ -173,4 +180,58 @@ int main(int argc, char** argv) {
   auto subst_expr2 = state.substitute(subst_expr.get());
   subst_expr2->accept(string_visitor);
   std::cout << string_visitor.result << std::endl;
+
+  */
+
+  mcmas::SwarmAgent env;
+  env.name = "Environment";
+  env.add_actions({"flip", "keep"});
+  env.add_variable("dummy", mcmas::BOOL());
+  env.add_init_condition(Expression::Eq(Expression::Id("dummy"), Expression::Bool("true")));
+  env.add_protocol_line(Expression::Bool(true), {"flip", "keep"});
+  env.add_evolution_line(Expression::Eq(Expression::Id("dummy"), Expression::Bool(true)), Expression::Bool(true));
+
+  mcmas::SwarmAgent agent;
+  agent.name = "Agent";
+  agent.add_actions({"flip", "keep"});
+  agent.add_variable("bit", mcmas::BOOL());
+  agent.add_init_condition(Expression::Bool(true));
+  agent.add_protocol_line(Expression::Bool(true), {"flip", "keep"});
+  agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Not(Expression::Id("bit"))), 
+                         Expression::And(
+                           Expression::Eq(
+                             Expression::Id("Environment", "Action"), 
+                             Expression::Id("flip")
+                           ), 
+                           Expression::Not(
+                             Expression::Eq(
+                               Expression::Id("GlobalAction"), 
+                               Expression::Id("keep")
+                             )
+                           )
+                         )
+                        );
+
+  agent.add_evolution_line(Expression::Eq(Expression::Id("bit"), Expression::Id("bit")), 
+                         Expression::And(
+                           Expression::Eq(
+                             Expression::Id("Environment", "Action"), 
+                             Expression::Id("keep")
+                           ), 
+                           Expression::Not(
+                             Expression::Eq(
+                               Expression::Id("GlobalAction"), 
+                               Expression::Id("flip")
+                             )
+                           )
+                         )
+                        );
+
+  mcmas::Evaluation evaluation;
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("bittrue", Expression::Eq(Expression::Id("Agent", "bit"), Expression::Bool(true))));
+
+  mcmas::SwarmSystem ss{env, agent, 3, evaluation};
+
+  std::cout << ss.to_string() << std::endl;
+
 }

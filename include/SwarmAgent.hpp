@@ -35,10 +35,9 @@ namespace mcmas {
 
       void apply_local_action_transform(int comm_distance);
       void apply_global_action_transform(mcmas::GlobalActionVisitor& visitor);
-      std::vector<AgentState> get_all_states();
+      std::vector<AgentState> get_all_states() const;
 
-      std::vector<SwarmAgent> generate_n_agents();
-      std::vector<AbstractAgent> generate_abstract_agents();
+      std::vector<AbstractAgent> generate_abstract_agents() const;
 
       std::string to_string() const;
 

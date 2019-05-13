@@ -7,6 +7,20 @@ namespace mcmas {
     this->condition = std::move(condition);
   }
 
+  EvaluationLine::EvaluationLine(const EvaluationLine& other) {
+    auto line = other.clone();
+    name = std::move(line.name); 
+    condition = std::move(line.condition); 
+  }
+
+  EvaluationLine& EvaluationLine::operator=(const EvaluationLine& other) {
+    auto line = other.clone();
+    name = std::move(line.name); 
+    condition = std::move(line.condition); 
+
+    return *this;
+  }
+
   std::string EvaluationLine::to_string() const {
     return name + " if " + condition->to_string();
   }

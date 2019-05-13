@@ -3,7 +3,7 @@
 #include <variant>
 #include <string>
 #include <vector>
-#include "utils/DeepPtr.hpp"
+#include <memory>
 #include "Operator.hpp"
 
 namespace mcmas {

@@ -11,6 +11,9 @@ namespace mcmas {
       std::map<std::string, std::vector<std::string>> action_register;
 
       AbstractAgent(const AgentState& state, const SwarmAgent& concrete_agent, Expression::Ptr&& transition, int id);
+
+      static std::string generate_abstract_agent_name(const std::string& concrete_name, int i);
+      
  };
 
 }

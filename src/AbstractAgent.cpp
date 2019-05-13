@@ -8,7 +8,7 @@ namespace mcmas {
   AbstractAgent::AbstractAgent(const AgentState& state, const SwarmAgent& concrete_agent, Expression::Ptr&& transition, int id) 
   : state(state)
   {
-    name = concrete_agent.name + "__" + std::to_string(id);
+    name = generate_abstract_agent_name(concrete_agent.name, id);
 
     add_variable("is_active", BOOL());
 
@@ -79,6 +79,10 @@ namespace mcmas {
     add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
     add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
 
+  }
+
+  std::string AbstractAgent::generate_abstract_agent_name(const std::string& concrete_name, int i) {
+    return "Abs__" + concrete_name + "__" + std::to_string(i);
   }
 
 }

@@ -19,11 +19,7 @@ namespace mcmas {
 
       SwarmSystem(const SwarmAgent& enviroment, const SwarmAgent& agent, int num_agents, const Evaluation& evaluation);
 
-      void add_environment(SwarmAgent&& environment);
-      void add_agent(const SwarmAgent& agent, int num);
-      void add_evaluation
-      void apply_global_action_transform();
-      void set_init_condition();
+      std::string to_string() const;
 
   };
 }

@@ -6,6 +6,7 @@
 #include <string>
 #include "expressions/Expression.hpp"
 #include "Visitor.hpp"
+#include "AbstractAgent.hpp"
 #include "SwarmAgent.hpp"
 #include "utils/Misc.hpp"
 
@@ -36,6 +37,14 @@ namespace mcmas {
       void add_actions_from_sa(const SwarmAgent& agent) {
         for (const auto& action : agent.actions) {
           add_owner_action(action, agent.name);
+        }
+      }
+
+      void add_actions_from_aa(const AbstractAgent& agent) {
+        for (const auto& [action, compound_actions] : agent.action_register) {
+          for (const auto& compound_action : compound_actions) {
+            add_owner_action(action, agent.name, compound_action);
+          }
         }
       }
 

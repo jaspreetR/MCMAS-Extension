@@ -2,6 +2,7 @@
 #include <cassert>
 #include "utils/Misc.hpp"
 #include "visitors/GlobalActionVisitor.hpp"
+#include "visitors/OwnerReplaceVisitor.hpp"
 #include "AbstractAgent.hpp"
 
 namespace mcmas {
@@ -66,16 +67,18 @@ namespace mcmas {
     evolution.apply_global_action_transform(visitor);
   }
 
-  std::vector<AgentState> SwarmAgent::get_all_states() {
+  std::vector<AgentState> SwarmAgent::get_all_states() const {
     std::vector<AgentState> states(1);    
-    for (const auto& [name, type] : vars) {
+    for (const auto& [name, type] : this->vars) {
+      std::cout << "helloadadf" << std::endl;
+      std::cout << states.size() << std::endl;
       auto possible_values = ::mcmas::generate_possible_values(type);
       states = variable_cartesian_product(states, name, possible_values);
     }
     return states;
   }
 
-  std::vector<AbstractAgent> SwarmAgent::generate_abstract_agents() {
+  std::vector<AbstractAgent> SwarmAgent::generate_abstract_agents() const {
 
     std::vector<Expression*> ev_transitions;
     ev_transitions.reserve(evolution.lines.size());
@@ -92,7 +95,8 @@ namespace mcmas {
 
     std::vector<std::vector<Expression::Ptr>> activation_conditions(states.size());
 
-    for (const auto& state : states) {
+    for (size_t k = 0; k < states.size(); ++k) {
+      const auto& state = states[k];
       for (size_t i = 0; i < ev_transitions.size(); ++i) {
         auto* transition = ev_transitions[i];
         auto new_state = state.apply(transition);
@@ -100,7 +104,10 @@ namespace mcmas {
         // TODO: quadratic complexity could be n log n
         for (size_t j = 0; j < states.size(); ++j) {
           if (new_state == states[j]) {
-            activation_conditions[j].push_back(state.substitute(ev_conditions[i]));
+            auto activation_condition = state.substitute(ev_conditions[i]);
+            OwnerReplaceVisitor visitor(AbstractAgent::generate_abstract_agent_name(name, k)); 
+            activation_condition->accept(visitor);
+            activation_conditions[j].emplace_back(std::move(activation_condition));
             break;
           }
         }
