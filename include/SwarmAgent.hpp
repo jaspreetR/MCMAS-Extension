@@ -19,6 +19,8 @@ namespace mcmas {
       //std::set<std::string> lobsvars;
       std::map<std::string, BaseType> vars;
       std::vector<std::string> actions;
+
+      Expression::Ptr init_condition;
       Protocol protocol;
       Evolution evolution;
 
@@ -29,6 +31,7 @@ namespace mcmas {
       void add_actions(const std::vector<std::string>& actions);
       void add_protocol_line(Expression::Ptr&& condition, const std::vector<std::string>& actions);
       void add_evolution_line(Expression::Ptr&& result, Expression::Ptr&& condition);
+      void add_init_condition(Expression::Ptr&& init_condition);
 
       void apply_local_action_transform(int comm_distance);
       void apply_global_action_transform(mcmas::GlobalActionVisitor& visitor);

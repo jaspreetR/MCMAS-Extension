@@ -11,6 +11,7 @@ namespace mcmas {
                                                 const IntBoolVector& values);
 
   SwarmAgent::SwarmAgent() {
+    init_condition = Expression::Bool(true);
   }
 
   void SwarmAgent::add_2d_position_variables(int max_x, int max_y) {
@@ -34,6 +35,10 @@ namespace mcmas {
   void SwarmAgent::add_evolution_line(Expression::Ptr&& result, Expression::Ptr&& condition) {
     EvolutionLine evolution_line(std::move(result), std::move(condition));
     evolution.lines.emplace_back(std::move(evolution_line));
+  }
+
+  void SwarmAgent::add_init_condition(Expression::Ptr&& init_condition) {
+    this->init_condition = std::move(init_condition);
   }
 
   void SwarmAgent::apply_local_action_transform(int comm_distance) {

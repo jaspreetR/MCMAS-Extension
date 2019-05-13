@@ -1,6 +1,7 @@
 #include "AbstractAgent.hpp"
 #include <algorithm>
 #include "utils/Misc.hpp"
+#include "visitors/OwnerActionVisitor.hpp"
 
 namespace mcmas {
 
@@ -14,8 +15,10 @@ namespace mcmas {
     auto concrete_agent_actions = concrete_agent.actions;
     std::sort(concrete_agent_actions.begin(), concrete_agent_actions.end());
     
+    // TODO: generate these actions outside the constructor and store as shared pointer
     auto actions_power_set = power_set(concrete_agent_actions);
-    std::vector<std::string> abstract_actions;
+
+    std::vector<std::string> abstract_actions = {"null"};
 
     for (const auto& actions_subset : actions_power_set) {
       auto abstract_action = concat_strings(actions_subset);
@@ -28,6 +31,11 @@ namespace mcmas {
     }
 
     add_actions(abstract_actions);
+
+    // replace owner actions of transition with compound actions of abstract agent
+    OwnerActionVisitor visitor(action_register);
+    transition->accept(visitor);
+    transition = std::move(visitor.result);
 
     auto protocol_lines_power_set = power_set(concrete_agent.protocol.lines);
     for (const auto& line_set : protocol_lines_power_set) {
@@ -58,11 +66,19 @@ namespace mcmas {
       }
 
       auto new_condition = conditions.size() >= 2 ? Expression::And(std::move(conditions)) : std::move(conditions[0]);
+      new_condition = Expression::And(
+                        Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), 
+                        std::move(new_condition)
+                      );
+
       add_protocol_line(std::move(new_condition), std::move(new_enabled_actions));
     } 
 
+    add_protocol_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), std::vector<std::string>{"null"});
+
     add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
     add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+
   }
 
 }
