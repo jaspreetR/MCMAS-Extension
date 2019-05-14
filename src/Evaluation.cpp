@@ -6,7 +6,7 @@ namespace mcmas {
     std::string result = "Evaluation\n";
 
     for (const auto& line : lines) {
-      result += line.to_string() + "\n";
+      result += line.to_string() + ";\n";
     }
 
     result += "end Evaluation\n";

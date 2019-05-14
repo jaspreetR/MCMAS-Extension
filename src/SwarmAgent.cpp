@@ -70,8 +70,6 @@ namespace mcmas {
   std::vector<AgentState> SwarmAgent::get_all_states() const {
     std::vector<AgentState> states(1);    
     for (const auto& [name, type] : this->vars) {
-      std::cout << "helloadadf" << std::endl;
-      std::cout << states.size() << std::endl;
       auto possible_values = ::mcmas::generate_possible_values(type);
       states = variable_cartesian_product(states, name, possible_values);
     }
@@ -104,7 +102,18 @@ namespace mcmas {
         // TODO: quadratic complexity could be n log n
         for (size_t j = 0; j < states.size(); ++j) {
           if (new_state == states[j]) {
+            //add null action check to see if previous state is even active
             auto activation_condition = state.substitute(ev_conditions[i]);
+            activation_condition = Expression::And(
+                                     Expression::Not(
+                                       Expression::Eq(
+                                         Expression::Id("Action"), 
+                                         Expression::Id("null")
+                                       )
+                                     ), 
+                                     std::move(activation_condition)
+                                   );
+
             OwnerReplaceVisitor visitor(AbstractAgent::generate_abstract_agent_name(name, k)); 
             activation_condition->accept(visitor);
             activation_conditions[j].emplace_back(std::move(activation_condition));
@@ -124,7 +133,8 @@ namespace mcmas {
       } else if (conditions.size() == 1) {
         disjunct_activation_condition = std::move(conditions[0]);
       } else if (conditions.size() == 0) {
-        disjunct_activation_condition = Expression::Bool(false);
+        // cant put "false" here so need to put equivalent false condition
+        disjunct_activation_condition = Expression::Eq(Expression::Int(1), Expression::Int(2));
       } else {
         std::cout << "should not reach here" << std::endl;
       }
@@ -194,6 +204,7 @@ namespace mcmas {
     SwarmAgent result;
     result.name = name;
     result.vars = vars;
+    result.init_condition = init_condition->clone();
     result.actions = actions;
     result.protocol = protocol.clone();
     result.evolution = evolution.clone();

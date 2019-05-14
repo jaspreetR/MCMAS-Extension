@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include "expressions/Expression.hpp"
+#include "formulas/Formula.hpp"
 #include "utils/DynamicBitset.hpp"
 
 namespace mcmas {
@@ -106,6 +107,10 @@ namespace mcmas {
     }
 
     return result;
+  }
+
+  inline std::string quantifier_to_string(formulas::Quantifier quantifier) {
+    return quantifier == formulas::Quantifier::A ? "A" : "E"; 
   }
   
 } // namespace mcmas

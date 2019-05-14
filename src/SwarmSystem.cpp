@@ -4,10 +4,18 @@
 
 namespace mcmas {
 
+  // add new visitor for changing owner in ids - needed for init states
+  // generate new concrete_agents and change ids - need to change name and init states
+  // generate abstract agents
+  // apply global action transform to all agents
+  // generate init states condition - abstract agent: 1.false or (sub and 1.true) and ... (1.true or 2.true or 3.true)
+  // generate new atoms for each concrete agent - maybe check if atom contains agent name
+  // given formulae with given placeholders, substitute with agent1, agent2 etc
   SwarmSystem::SwarmSystem(const SwarmAgent& environment, 
                            const SwarmAgent& agent, 
                            int num_agents, 
-                           const Evaluation& evaluation) {
+                           const Evaluation& evaluation,
+                           std::vector<IndexedFormula>&& formulas) {
     
     this->environment = environment.clone();
 
@@ -52,6 +60,10 @@ namespace mcmas {
     abstract_active_exprs.reserve(abstract_agents.size());
 
     for (auto& abstract_agent : abstract_agents) {
+      // cant sub in state
+      // instead replace owner with abstract_agent
+      // also add condition setting abstract_agent vars to its state values
+      // (is_active = false) or ((agent_init_condition) and (abstract_agent_state_init_condition) and is_active = true)
       auto subbed_init_condition = abstract_agent.state.substitute(agent.init_condition.get());
       auto init_condition = Expression::Or(
                               Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
@@ -65,17 +77,14 @@ namespace mcmas {
       abstract_active_exprs.emplace_back(Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true)));
     }
 
-    std::cout << "hello" << agent.get_all_states().size() << std::endl;
     init_conditions.emplace_back(Expression::Or(std::move(abstract_active_exprs)));
     init_states = Expression::And(std::move(init_conditions));
-    std::cout << "hello2" << std::endl;
 
     Evaluation new_evaluation;
     new_evaluation.lines.reserve(concrete_agents.size() * evaluation.lines.size());
     for (const auto& line : evaluation.lines) {
-      for (size_t i = 0; i < concrete_agents.size(); ++i) {
-        const auto& concrete_agent = concrete_agents[i];
-        auto new_atom_name = line.name + "__" + std::to_string(i);
+      for (const auto& concrete_agent : concrete_agents) {
+        auto new_atom_name = line.name + "__" + concrete_agent.name;
         auto new_condition = line.condition->clone();
         OwnerReplaceVisitor visitor(concrete_agent.name, agent.name);
         new_condition->accept(visitor);
@@ -86,13 +95,10 @@ namespace mcmas {
 
     this->evaluation = new_evaluation;
 
-    // add new visitor for changing owner in ids - needed for init states
-    // generate new concrete_agents and change ids - need to change name and init states
-    // generate abstract agents
-    // apply global action transform to all agents
-    // generate init states condition - abstract agent: 1.false or (sub and 1.true) and ... (1.true or 2.true or 3.true)
-    // generate new atoms for each concrete agent - maybe check if atom contains agent name
-    // given formulae with given placeholders, substitute with agent1, agent2 etc
+    this->formulas = std::move(formulas);
+    for (auto& formula : this->formulas) {
+      formula.insert_agent_names(concrete_agents); 
+    }
   }
 
   std::string SwarmSystem::to_string() const {
@@ -113,6 +119,12 @@ namespace mcmas {
     result += "InitStates\n";
     result += init_states->to_string() + ";\n";
     result += "end InitStates\n\n";
+
+    result += "Formulae\n";
+    for (auto& formula : formulas) {
+      result += formula.formula->to_string() + ";\n";
+    }
+    result += "end Formulae\n";
 
     return result;
   }

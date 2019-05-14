@@ -14,11 +14,9 @@
 #include "utils/DynamicBitset.hpp"
 
 using mcmas::Expression;
+using mcmas::Formula;
 
 int main(int argc, char** argv) {
-  std::cout << std::boolalpha;
-  std::cout << "Hello World!" << std::endl;
-
   /*
   auto expr = mcmas::Expression::And(mcmas::Expression::Bool(false), mcmas::Expression::Bool(true));
   auto expr2 = mcmas::Expression::Not(mcmas::Expression::Bool(false));
@@ -183,6 +181,11 @@ int main(int argc, char** argv) {
 
   */
 
+
+  ///////
+  /*
+
+
   mcmas::SwarmAgent env;
   env.name = "Environment";
   env.add_actions({"flip", "keep"});
@@ -229,8 +232,53 @@ int main(int argc, char** argv) {
 
   mcmas::Evaluation evaluation;
   evaluation.lines.emplace_back(mcmas::EvaluationLine("bittrue", Expression::Eq(Expression::Id("Agent", "bit"), Expression::Bool(true))));
+  */
 
-  mcmas::SwarmSystem ss{env, agent, 3, evaluation};
+  auto true_expr = Expression::Eq(Expression::Int(1), Expression::Int(1));
+
+  mcmas::SwarmAgent env;
+  env.name = "Environment";
+  env.add_actions({"go"});
+  env.add_variable("dummy", mcmas::BOOL());
+  env.add_init_condition(Expression::Eq(Expression::Id("dummy"), Expression::Bool("true")));
+  env.add_protocol_line(true_expr->clone(), {"go"});
+
+  mcmas::SwarmAgent agent;
+  agent.name = "Robot";
+  agent.add_actions({"go", "stay"});
+  agent.add_variable("pos", mcmas::RANGED_INT(1, 5));
+  agent.add_init_condition(Expression::Eq(Expression::Id("pos"), Expression::Int(1)));
+  agent.add_protocol_line(true_expr->clone(), {"go", "stay"});
+  agent.add_evolution_line(Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
+                         Expression::And(
+                           Expression::Eq(
+                             Expression::Id("Environment", "Action"), 
+                             Expression::Id("go")
+                           ), 
+                           Expression::And(
+                             Expression::Eq(
+                               Expression::Id("Action"), 
+                               Expression::Id("go")
+                             ),
+                             Expression::Lt(
+                               Expression::Id("pos"),
+                               Expression::Int(5)
+                             )
+                           )
+                         )
+                        );
+
+  agent.add_evolution_line(Expression::Eq(Expression::Id("pos"), Expression::Int(5)), 
+                           Expression::Eq(Expression::Id("pos"), Expression::Int(5))
+                        );
+
+  mcmas::Evaluation evaluation;
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("ended", Expression::Eq(Expression::Id("Robot", "pos"), Expression::Int(5))));
+
+  std::vector<mcmas::IndexedFormula> formulas;
+  std::vector<std::string> placeholders{"X"};
+  formulas.emplace_back(placeholders, Formula::AF(Formula::AG(Formula::Atom("X", "ended"))));
+  mcmas::SwarmSystem ss{env, agent, 3, evaluation, std::move(formulas)};
 
   std::cout << ss.to_string() << std::endl;
 

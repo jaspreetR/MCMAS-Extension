@@ -1,6 +1,7 @@
 #include "AbstractAgent.hpp"
 #include <algorithm>
 #include "utils/Misc.hpp"
+#include "utils/Overload.hpp"
 #include "visitors/OwnerActionVisitor.hpp"
 
 namespace mcmas {
@@ -11,6 +12,15 @@ namespace mcmas {
     name = generate_abstract_agent_name(concrete_agent.name, id);
 
     add_variable("is_active", BOOL());
+
+    for (const auto& [var_name, value] : state.get()) {
+      BaseType var_type = std::visit(Overload {
+        [](int x) -> mcmas::BaseType { return RANGED_INT(x, x); },
+        [](bool b) -> mcmas::BaseType { return BOOL(); }
+      }, value);
+
+      add_variable(var_name, var_type);
+    }
 
     auto concrete_agent_actions = concrete_agent.actions;
     std::sort(concrete_agent_actions.begin(), concrete_agent_actions.end());
