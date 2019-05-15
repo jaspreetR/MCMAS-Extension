@@ -18,6 +18,7 @@ namespace mcmas {
       std::string name;
       //std::set<std::string> lobsvars;
       std::map<std::string, BaseType> vars;
+      std::map<std::string, BaseType> obsvars;
       std::vector<std::string> actions;
 
       Expression::Ptr init_condition;
@@ -28,6 +29,7 @@ namespace mcmas {
 
       void add_2d_position_variables(int max_x, int max_y);
       void add_variable(const std::string& var_name, BaseType var_type);
+      void add_obs_variable(const std::string& var_name, BaseType var_type);
       void add_actions(const std::vector<std::string>& actions);
       void add_protocol_line(Expression::Ptr&& condition, const std::vector<std::string>& actions);
       void add_evolution_line(Expression::Ptr&& result, Expression::Ptr&& condition);

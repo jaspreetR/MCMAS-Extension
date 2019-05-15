@@ -241,14 +241,14 @@ int main(int argc, char** argv) {
   env.add_actions({"go"});
   env.add_variable("dummy", mcmas::BOOL());
   env.add_init_condition(Expression::Eq(Expression::Id("dummy"), Expression::Bool("true")));
-  env.add_protocol_line(true_expr->clone(), {"go"});
+  env.add_protocol_line(Expression::Eq(Expression::Id("dummy"), Expression::Id("dummy")), {"go"});
 
   mcmas::SwarmAgent agent;
   agent.name = "Robot";
   agent.add_actions({"go", "stay"});
   agent.add_variable("pos", mcmas::RANGED_INT(1, 5));
   agent.add_init_condition(Expression::Eq(Expression::Id("pos"), Expression::Int(1)));
-  agent.add_protocol_line(true_expr->clone(), {"go", "stay"});
+  agent.add_protocol_line(Expression::Eq(Expression::Id("pos"), Expression::Id("pos")), {"go, stay"});
   agent.add_evolution_line(Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
                          Expression::And(
                            Expression::Eq(
@@ -257,7 +257,7 @@ int main(int argc, char** argv) {
                            ), 
                            Expression::And(
                              Expression::Eq(
-                               Expression::Id("Action"), 
+                               Expression::Id("GlobalAction"), 
                                Expression::Id("go")
                              ),
                              Expression::Lt(

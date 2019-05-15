@@ -1,6 +1,8 @@
 #include "SwarmSystem.hpp"
 #include "visitors/OwnerReplaceVisitor.hpp"
 #include "visitors/GlobalActionVisitor.hpp"
+#include <limits>
+#include <algorithm>
 
 namespace mcmas {
 
@@ -18,6 +20,36 @@ namespace mcmas {
                            std::vector<IndexedFormula>&& formulas) {
     
     this->environment = environment.clone();
+
+    this->environment.add_obs_variable("env_val_true", BOOL());
+    this->environment.init_condition = Expression::And (
+                                         Expression::Eq(Expression::Id("env_val_true"), Expression::Bool(true)),
+                                         std::move(this->environment.init_condition)
+                                       );
+    this->environment.add_obs_variable("env_val_false", BOOL());
+    this->environment.init_condition = Expression::And (
+                                         Expression::Eq(Expression::Id("env_val_false"), Expression::Bool(false)),
+                                         std::move(this->environment.init_condition)
+                                       );
+
+    int min_int_range = std::numeric_limits<int>::max();
+    int max_int_range = std::numeric_limits<int>::min();
+    for (const auto& var : agent.vars) {
+      auto var_type = var.second;
+      if (auto* int_type = std::get_if<RANGED_INT>(&var_type)) {
+        min_int_range = std::min(int_type->min, min_int_range); 
+        max_int_range = std::max(int_type->max, max_int_range); 
+      }
+    }
+
+    for (int i = min_int_range; i <= max_int_range; ++i) {
+      auto val_string = "env_val_" + std::to_string(i);
+      this->environment.add_obs_variable(val_string, RANGED_INT(min_int_range, max_int_range));
+      this->environment.init_condition = Expression::And (
+                                           Expression::Eq(Expression::Id(val_string), Expression::Int(i)),
+                                           std::move(this->environment.init_condition)
+                                         );
+    }
 
     GlobalActionVisitor ga_visitor;
     
@@ -51,6 +83,9 @@ namespace mcmas {
 
     std::vector<Expression::Ptr> init_conditions;
     init_conditions.reserve(concrete_agents.size() + abstract_agents.size() + 1);
+    OwnerReplaceVisitor env_or_visitor(this->environment.name);
+    this->environment.init_condition->accept(env_or_visitor);
+    init_conditions.emplace_back(std::move(this->environment.init_condition));
 
     for (auto& concrete_agent : concrete_agents) {
       init_conditions.emplace_back(std::move(concrete_agent.init_condition));
@@ -64,7 +99,29 @@ namespace mcmas {
       // instead replace owner with abstract_agent
       // also add condition setting abstract_agent vars to its state values
       // (is_active = false) or ((agent_init_condition) and (abstract_agent_state_init_condition) and is_active = true)
-      auto subbed_init_condition = abstract_agent.state.substitute(agent.init_condition.get());
+      // or
+      // eval init condition when given abstract agent state and simply allow those agents where it holds to be optionally active
+      //auto subbed_init_condition = abstract_agent.state.substitute(agent.init_condition.get());
+      auto result = abstract_agent.state.evaluate(agent.init_condition.get());
+      auto* bool_result = std::get_if<bool>(&result);
+
+      if (bool_result == nullptr) {
+        std::cout << "invalid agent init condition" << std::endl;
+        throw new std::exception();
+      }
+
+      Expression::Ptr init_condition;
+
+      if (*bool_result) {
+        init_condition = Expression::Or(
+                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
+                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
+                         );
+      } else {
+        init_condition = Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false));
+      }
+
+      /*
       auto init_condition = Expression::Or(
                               Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
                               Expression::And(
@@ -72,6 +129,8 @@ namespace mcmas {
                                 Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
                               )
                             );
+      */
+
       init_conditions.emplace_back(std::move(init_condition));
 
       abstract_active_exprs.emplace_back(Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true)));
@@ -84,6 +143,7 @@ namespace mcmas {
     new_evaluation.lines.reserve(concrete_agents.size() * evaluation.lines.size());
     for (const auto& line : evaluation.lines) {
       for (const auto& concrete_agent : concrete_agents) {
+        
         auto new_atom_name = line.name + "__" + concrete_agent.name;
         auto new_condition = line.condition->clone();
         OwnerReplaceVisitor visitor(concrete_agent.name, agent.name);

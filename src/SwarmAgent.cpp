@@ -22,6 +22,11 @@ namespace mcmas {
 
   void SwarmAgent::add_variable(const std::string& var_name, BaseType var_type) {
     vars[var_name] = var_type;
+
+  }
+
+  void SwarmAgent::add_obs_variable(const std::string& var_name, BaseType var_type) {
+    obsvars[var_name] = var_type;
   }
 
   void SwarmAgent::add_actions(const std::vector<std::string>& actions) {
@@ -114,6 +119,20 @@ namespace mcmas {
                                      std::move(activation_condition)
                                    );
 
+            /*
+            auto activation_condition = Expression::And(
+                                     Expression::Not(
+                                       Expression::Eq(
+                                         Expression::Id("Action"), 
+                                         Expression::Id("null")
+                                       )
+                                     ), 
+                                     ev_conditions[i]->clone()
+                                   );
+            */
+
+            //TODO: need to add const var values to environment and then retrieve them
+
             OwnerReplaceVisitor visitor(AbstractAgent::generate_abstract_agent_name(name, k)); 
             activation_condition->accept(visitor);
             activation_conditions[j].emplace_back(std::move(activation_condition));
@@ -134,7 +153,7 @@ namespace mcmas {
         disjunct_activation_condition = std::move(conditions[0]);
       } else if (conditions.size() == 0) {
         // cant put "false" here so need to put equivalent false condition
-        disjunct_activation_condition = Expression::Eq(Expression::Int(1), Expression::Int(2));
+        disjunct_activation_condition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
       } else {
         std::cout << "should not reach here" << std::endl;
       }
@@ -171,6 +190,17 @@ namespace mcmas {
   }
 
   std::string SwarmAgent::to_string() const {
+
+    std::string obsvars_string;
+    if (obsvars.size() > 0) {
+      obsvars_string = "Obsvars : \n"; 
+      for (const auto& [id, type] : obsvars) {
+        std::string type_string = ::mcmas::to_string(type);
+        obsvars_string += id + " : " + type_string + ";\n";
+      }
+      obsvars_string += "end Obsvars \n";
+    }
+
     std::string var_string = "Vars : \n";
     for (auto& [id, type] : vars) {
       std::string type_string = ::mcmas::to_string(type);
@@ -193,6 +223,7 @@ namespace mcmas {
     std::string evolution_string = evolution.to_string();
     
     return "Agent " + name + "\n" + 
+           obsvars_string +
            var_string + 
            action_string + 
            protocol_string + 

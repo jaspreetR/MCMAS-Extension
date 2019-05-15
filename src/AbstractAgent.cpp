@@ -54,8 +54,9 @@ namespace mcmas {
       std::set<std::string> actions;
 
       for (auto& line : line_set) {
-        auto subst_condition = state.substitute(line.condition.get());
-        conditions.emplace_back(std::move(subst_condition));
+        //auto subst_condition = state.substitute(line.condition.get());
+        //conditions.emplace_back(std::move(subst_condition));
+        conditions.emplace_back(line.condition->clone());
         for (auto& action : line.enabled_actions) {
           actions.emplace(std::move(action));
         }

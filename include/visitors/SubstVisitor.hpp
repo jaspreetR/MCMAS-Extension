@@ -70,10 +70,12 @@ namespace mcmas {
         result = Expression::Ptr(new BinaryExpression(std::move(left_result), std::move(right_result), expr.op->clone()));
       }
 
+      // these ids are hardcoded in Environment because mcmas does not accept const expressions
       Expression::Ptr value_to_expr(std::variant<int, bool> value) {
         return std::visit(Overload {
-          [](int value) { return Expression::Int(value); },
-          [](bool value) { return Expression::Bool(value);}
+          [](int value) { return Expression::Id("Environment", "env_val_" + std::to_string(value)); },
+          [](bool value) { return value ? Expression::Id("Environment", "env_val_true") : 
+                                          Expression::Id("Environment", "env_val_false");}
         }, value);
       }
   };
