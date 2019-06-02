@@ -21,6 +21,7 @@ namespace mcmas {
     
     this->environment = environment.clone();
 
+    // TODO: get rid of this hacky stuff by allowing mcmas to accept const expressions in its conditions
     this->environment.add_obs_variable("env_val_true", BOOL());
     this->environment.init_condition = Expression::And (
                                          Expression::Eq(Expression::Id("env_val_true"), Expression::Bool(true)),
@@ -95,13 +96,7 @@ namespace mcmas {
     abstract_active_exprs.reserve(abstract_agents.size());
 
     for (auto& abstract_agent : abstract_agents) {
-      // cant sub in state
-      // instead replace owner with abstract_agent
-      // also add condition setting abstract_agent vars to its state values
-      // (is_active = false) or ((agent_init_condition) and (abstract_agent_state_init_condition) and is_active = true)
-      // or
       // eval init condition when given abstract agent state and simply allow those agents where it holds to be optionally active
-      //auto subbed_init_condition = abstract_agent.state.substitute(agent.init_condition.get());
       auto result = abstract_agent.state.evaluate(agent.init_condition.get());
       auto* bool_result = std::get_if<bool>(&result);
 
@@ -110,15 +105,23 @@ namespace mcmas {
         throw new std::exception();
       }
 
-      Expression::Ptr init_condition;
+      Expression::Ptr init_condition = std::move(abstract_agent.init_condition);
+      OwnerReplaceVisitor abs_or_visitor(abstract_agent.name);
+      init_condition->accept(abs_or_visitor);
 
       if (*bool_result) {
-        init_condition = Expression::Or(
-                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
-                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
+        init_condition = Expression::And(
+                           std::move(init_condition),  
+                           Expression::Or(
+                             Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
+                             Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
+                           )
                          );
       } else {
-        init_condition = Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false));
+        init_condition = Expression::And(
+                           std::move(init_condition),
+                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false))
+                         );
       }
 
       /*

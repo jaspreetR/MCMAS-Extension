@@ -245,40 +245,106 @@ int main(int argc, char** argv) {
 
   mcmas::SwarmAgent agent;
   agent.name = "Robot";
-  agent.add_actions({"go", "stay"});
-  agent.add_variable("pos", mcmas::RANGED_INT(1, 5));
-  agent.add_init_condition(Expression::Eq(Expression::Id("pos"), Expression::Int(1)));
-  agent.add_protocol_line(Expression::Eq(Expression::Id("pos"), Expression::Id("pos")), {"go, stay"});
-  agent.add_evolution_line(Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
-                         Expression::And(
-                           Expression::Eq(
-                             Expression::Id("Environment", "Action"), 
-                             Expression::Id("go")
-                           ), 
-                           Expression::And(
-                             Expression::Eq(
-                               Expression::Id("GlobalAction"), 
-                               Expression::Id("go")
-                             ),
-                             Expression::Lt(
-                               Expression::Id("pos"),
-                               Expression::Int(5)
+  agent.add_actions({"go_plus", "go", "go_minus", "halt", "nothing"});
+  agent.add_variable("pos", mcmas::RANGED_INT(1, 7));
+  agent.add_variable("sensor_pos", mcmas::RANGED_INT(1, 7));
+  agent.add_variable("stopped", mcmas::BOOL());
+  agent.add_init_condition(Expression::And(
+                             Expression::Eq(Expression::Id("pos"), Expression::Int(1)),
+                             Expression::And(
+                               Expression::Eq(Expression::Id("sensor_pos"), Expression::Int(1)),
+                               Expression::Eq(Expression::Id("stopped"), Expression::Bool(false))
                              )
-                           )
-                         )
-                        );
+                          ));
+  agent.add_protocol_line(Expression::And(
+                            Expression::Lt(Expression::Id("sensor_pos"), Expression::Int(3)), 
+                            Expression::Eq(Expression::Id("stopped"), Expression::Bool(false))
+                          ), 
+                          {"go", "go_plus", "go_minus"});
 
-  agent.add_evolution_line(Expression::Eq(Expression::Id("pos"), Expression::Int(5)), 
-                           Expression::Eq(Expression::Id("pos"), Expression::Int(5))
-                        );
+  agent.add_protocol_line(Expression::And(
+                            Expression::Geq(Expression::Id("sensor_pos"), Expression::Int(3)), 
+                            Expression::Eq(Expression::Id("stopped"), Expression::Bool(false))
+                          ), 
+                          {"halt"});
+  agent.add_protocol_line(Expression::Eq(Expression::Id("stopped"), Expression::Bool(true)), {"nothing"});
+  agent.add_evolution_line(Expression::And(
+                             Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
+                             Expression::Eq(Expression::Id("sensor_pos"), Expression::Add(Expression::Id("pos"), Expression::Int(0))) 
+                           ),
+                           Expression::And(
+                             Expression::Eq(Expression::Id("Action"), Expression::Id("go_minus")),
+                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                           ));
+
+  agent.add_evolution_line(Expression::And(
+                             Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
+                             Expression::Eq(Expression::Id("sensor_pos"), Expression::Add(Expression::Id("pos"), Expression::Int(2))) 
+                           ),
+                           Expression::And(
+                             Expression::Eq(Expression::Id("Action"), Expression::Id("go")),
+                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                           ));
+
+  agent.add_evolution_line(Expression::And(
+                             Expression::Eq(Expression::Id("pos"), Expression::Add(Expression::Id("pos"), Expression::Int(1))), 
+                             Expression::Eq(Expression::Id("sensor_pos"), Expression::Add(Expression::Id("pos"), Expression::Int(2))) 
+                           ),
+                           Expression::And(
+                             Expression::Eq(Expression::Id("Action"), Expression::Id("go_plus")),
+                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                           ));
+
+  agent.add_evolution_line(Expression::Eq(Expression::Id("stopped"), Expression::Bool(true)),
+                           Expression::Or(
+                             Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")),
+                             Expression::Eq(Expression::Id("Action"), Expression::Id("nothing"))
+                           ));
 
   mcmas::Evaluation evaluation;
-  evaluation.lines.emplace_back(mcmas::EvaluationLine("ended", Expression::Eq(Expression::Id("Robot", "pos"), Expression::Int(5))));
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("halted", Expression::Eq(Expression::Id("Robot", "stopped"), Expression::Bool(true))));
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("pos1", Expression::Eq(Expression::Id("Robot", "sensor_pos"), Expression::Int(1))));
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("pos2", Expression::Eq(Expression::Id("Robot", "sensor_pos"), Expression::Int(2))));
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("pos3", Expression::Eq(Expression::Id("Robot", "sensor_pos"), Expression::Int(3))));
+  evaluation.lines.emplace_back(mcmas::EvaluationLine("pos4", Expression::Eq(Expression::Id("Robot", "sensor_pos"), Expression::Int(4))));
 
   std::vector<mcmas::IndexedFormula> formulas;
-  std::vector<std::string> placeholders{"X"};
-  formulas.emplace_back(placeholders, Formula::AF(Formula::AG(Formula::Atom("X", "ended"))));
-  mcmas::SwarmSystem ss{env, agent, 3, evaluation, std::move(formulas)};
+  std::vector<std::string> placeholders{"X", "Y"};
+
+  formulas.emplace_back(placeholders, Formula::EF(Formula::And(Formula::AG(Formula::Atom("X", "pos1")), Formula::AG(Formula::Atom("Y", "pos1")))));
+  formulas.emplace_back(placeholders, Formula::EF(Formula::And(Formula::AG(Formula::Atom("X", "pos2")), Formula::AG(Formula::Atom("Y", "pos2")))));
+  formulas.emplace_back(placeholders, Formula::EF(Formula::And(Formula::AG(Formula::Atom("X", "pos3")), Formula::AG(Formula::Atom("Y", "pos3")))));
+  formulas.emplace_back(placeholders, Formula::EF(Formula::And(Formula::AG(Formula::Atom("X", "pos4")), Formula::AG(Formula::Atom("Y", "pos4")))));
+
+  formulas.emplace_back(placeholders, Formula::AG(
+                                        Formula::Arrow(
+                                          Formula::Atom("X", "halted"), 
+                                          Formula::K("X", Formula::AX(Formula::AX(Formula::Atom("Y", "halted"))))
+                                        )
+                                      ));
+
+  formulas.emplace_back(placeholders, Formula::AG(
+                                        Formula::Arrow(
+                                          Formula::Atom("X", "halted"), 
+                                          Formula::K("X", Formula::Atom("Y", "halted"))
+                                        )
+                                      ));
+
+  formulas.emplace_back(placeholders, Formula::AG(
+                                        Formula::Arrow(
+                                          Formula::Atom("X", "halted"), 
+                                          Formula::K("X", Formula::AX(Formula::Atom("Y", "halted")))
+                                        )
+                                      ));
+
+  formulas.emplace_back(placeholders, Formula::AG(
+                                        Formula::Arrow(
+                                          Formula::Atom("X", "halted"), 
+                                          Formula::K("X", Formula::AX(Formula::AX(Formula::AX(Formula::Atom("Y", "halted")))))
+                                        )
+                                      ));
+
+  mcmas::SwarmSystem ss{env, agent, 2, evaluation, std::move(formulas)};
 
   std::cout << ss.to_string() << std::endl;
 

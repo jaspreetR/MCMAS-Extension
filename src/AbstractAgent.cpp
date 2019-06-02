@@ -13,14 +13,22 @@ namespace mcmas {
 
     add_variable("is_active", BOOL());
 
-    for (const auto& [var_name, value] : state.get()) {
-      BaseType var_type = std::visit(Overload {
-        [](int x) -> mcmas::BaseType { return RANGED_INT(x, x); },
-        [](bool b) -> mcmas::BaseType { return BOOL(); }
-      }, value);
-
+    // set init_condition to set vars with state values
+    for (const auto& [var_name, var_type] : concrete_agent.vars) {
       add_variable(var_name, var_type);
     }
+
+    std::vector<Expression::Ptr> init_var_conditions;
+    init_var_conditions.reserve(state.get().size());
+    for (const auto& [var_name, value] : state.get()) {
+      Expression::Ptr value_expr = std::visit(Overload{
+        [](int x){ return Expression::Int(x); },
+        [](bool b){ return Expression::Bool(b); }
+      }, value);
+      init_var_conditions.emplace_back(Expression::Eq(Expression::Id(var_name), std::move(value_expr)));
+    }
+
+    init_condition = Expression::And(std::move(init_var_conditions));
 
     auto concrete_agent_actions = concrete_agent.actions;
     std::sort(concrete_agent_actions.begin(), concrete_agent_actions.end());

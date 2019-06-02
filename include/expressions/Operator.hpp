@@ -134,7 +134,11 @@ namespace mcmas {
   class EqOperator : public BinaryOperator {
     public:
       EvalType apply(EvalType left, EvalType right) {
-        return {std::get<int>(left) == std::get<int>(right)};
+        if (std::holds_alternative<int>(left)) {
+          return {std::get<int>(left) == std::get<int>(right)};
+        } else {
+          return {std::get<bool>(left) == std::get<bool>(right)};
+        }
       }
 
       std::string getToken() {
@@ -149,7 +153,11 @@ namespace mcmas {
   class NeqOperator : public BinaryOperator {
     public:
       EvalType apply(EvalType left, EvalType right) {
-        return {std::get<int>(left) != std::get<int>(right)};
+        if (std::holds_alternative<int>(left)) {
+          return {std::get<int>(left) != std::get<int>(right)};
+        } else {
+          return {std::get<bool>(left) != std::get<bool>(right)};
+        }
       }
 
       std::string getToken() {

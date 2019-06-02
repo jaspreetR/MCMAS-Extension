@@ -18,7 +18,11 @@ namespace mcmas {
   }
 
   Expression::Ptr Expression::And(std::vector<Expression::Ptr>&& args) {
-    assert(args.size() >= 2);
+    assert(args.size() >= 1);
+
+    if (args.size() == 1) {
+      return std::move(args[0]);
+    }
 
     auto last = std::move(*args.rbegin());
     auto second_last = std::move(*(args.rbegin()+1));
@@ -35,7 +39,11 @@ namespace mcmas {
   }
 
   Expression::Ptr Expression::Or(std::vector<Expression::Ptr>&& args) {
-    assert(args.size() >= 2);
+    assert(args.size() >= 1);
+
+    if (args.size() == 1) {
+      return std::move(args[0]);
+    }
 
     auto last = std::move(*args.rbegin());
     auto second_last = std::move(*(args.rbegin()+1));
