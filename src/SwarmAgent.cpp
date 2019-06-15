@@ -96,7 +96,7 @@ namespace mcmas {
 
     auto states = get_all_states();
 
-    std::vector<std::vector<Expression::Ptr>> activation_conditions(states.size());
+    std::vector<std::map<int, std::vector<Expression::Ptr>>> activation_conditions(states.size());
 
     for (size_t k = 0; k < states.size(); ++k) {
       const auto& state = states[k];
@@ -135,37 +135,40 @@ namespace mcmas {
 
             OwnerReplaceVisitor visitor(AbstractAgent::generate_abstract_agent_name(name, k)); 
             activation_condition->accept(visitor);
-            activation_conditions[j].emplace_back(std::move(activation_condition));
+            activation_conditions[j][k].emplace_back(std::move(activation_condition));
             break;
           }
         }
       }
     }
 
-    std::vector<Expression::Ptr> disjunct_activation_conditions;
-    disjunct_activation_conditions.reserve(activation_conditions.size());
-    for (auto& conditions : activation_conditions) {
-      Expression::Ptr disjunct_activation_condition;
+    std::vector<std::map<int, Expression::Ptr>> disjunct_activation_condition_sets;
+    disjunct_activation_condition_sets.reserve(activation_conditions.size());
+    for (auto& condition_set : activation_conditions) {
+      std::map<int, Expression::Ptr> disjunct_condition_set;
+      for (auto& [id, conditions] : condition_set) {
+        Expression::Ptr disjunct_activation_condition;
 
-      if (conditions.size() >= 2) {
-        disjunct_activation_condition = Expression::Or(std::move(conditions));
-      } else if (conditions.size() == 1) {
-        disjunct_activation_condition = std::move(conditions[0]);
-      } else if (conditions.size() == 0) {
-        // cant put "false" here so need to put equivalent false condition
-        disjunct_activation_condition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
-      } else {
-        std::cout << "should not reach here" << std::endl;
+        if (conditions.size() >= 2) {
+          disjunct_activation_condition = Expression::Or(std::move(conditions));
+        } else if (conditions.size() == 1) {
+          disjunct_activation_condition = std::move(conditions[0]);
+        } else if (conditions.size() == 0) {
+          // cant put "false" here so need to put equivalent false condition
+          disjunct_activation_condition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
+        } else {
+          std::cout << "should not reach here" << std::endl;
+        }
+        disjunct_condition_set[id] = std::move(disjunct_activation_condition);
       }
-
-      disjunct_activation_conditions.emplace_back(std::move(disjunct_activation_condition));
+      disjunct_activation_condition_sets.emplace_back(std::move(disjunct_condition_set));
     }
 
     std::vector<AbstractAgent> result;
     result.reserve(states.size());
 
     for (size_t i = 0; i < states.size(); ++i) {
-      auto agent = AbstractAgent(states[i], *this, std::move(disjunct_activation_conditions[i]), i);
+      auto agent = AbstractAgent(states[i], *this, std::move(disjunct_activation_condition_sets[i]), i);
       result.emplace_back(std::move(agent));
     }
 

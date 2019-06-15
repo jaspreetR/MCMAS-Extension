@@ -26,6 +26,7 @@ namespace mcmas {
                   std::vector<IndexedFormula>&& formulas);
 
       std::string to_string() const;
+      void print() const;
 
   };
 }

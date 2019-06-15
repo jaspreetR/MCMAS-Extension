@@ -274,7 +274,7 @@ int main(int argc, char** argv) {
                            ),
                            Expression::And(
                              Expression::Eq(Expression::Id("Action"), Expression::Id("go_minus")),
-                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                             Expression::Not(Expression::Eq(Expression::Id("Action"), Expression::Id("halt")))
                            ));
 
   agent.add_evolution_line(Expression::And(
@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
                            ),
                            Expression::And(
                              Expression::Eq(Expression::Id("Action"), Expression::Id("go")),
-                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                             Expression::Not(Expression::Eq(Expression::Id("Action"), Expression::Id("halt")))
                            ));
 
   agent.add_evolution_line(Expression::And(
@@ -292,12 +292,12 @@ int main(int argc, char** argv) {
                            ),
                            Expression::And(
                              Expression::Eq(Expression::Id("Action"), Expression::Id("go_plus")),
-                             Expression::Not(Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")))
+                             Expression::Not(Expression::Eq(Expression::Id("Action"), Expression::Id("halt")))
                            ));
 
   agent.add_evolution_line(Expression::Eq(Expression::Id("stopped"), Expression::Bool(true)),
                            Expression::Or(
-                             Expression::Eq(Expression::Id("GlobalAction"), Expression::Id("halt")),
+                             Expression::Eq(Expression::Id("Action"), Expression::Id("halt")),
                              Expression::Eq(Expression::Id("Action"), Expression::Id("nothing"))
                            ));
 
@@ -346,6 +346,7 @@ int main(int argc, char** argv) {
 
   mcmas::SwarmSystem ss{env, agent, 2, evaluation, std::move(formulas)};
 
-  std::cout << ss.to_string() << std::endl;
+  ss.print();
+  //std::cout << ss.to_string() << std::endl;
 
 }

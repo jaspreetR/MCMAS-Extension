@@ -6,7 +6,8 @@
 
 namespace mcmas {
 
-  AbstractAgent::AbstractAgent(const AgentState& state, const SwarmAgent& concrete_agent, Expression::Ptr&& transition, int id) 
+  AbstractAgent::AbstractAgent(const AgentState& state, const SwarmAgent& concrete_agent, 
+                               std::map<int, Expression::Ptr>&& transition_set, int id) 
   : state(state)
   {
     name = generate_abstract_agent_name(concrete_agent.name, id);
@@ -16,6 +17,11 @@ namespace mcmas {
     // set init_condition to set vars with state values
     for (const auto& [var_name, var_type] : concrete_agent.vars) {
       add_variable(var_name, var_type);
+    }
+
+    for (const auto& [id, expr] : transition_set) {
+      (void)expr;
+      add_variable("from_" + std::to_string(id), BOOL());
     }
 
     std::vector<Expression::Ptr> init_var_conditions;
@@ -50,10 +56,24 @@ namespace mcmas {
 
     add_actions(abstract_actions);
 
-    // replace owner actions of transition with compound actions of abstract agent
-    OwnerActionVisitor visitor(action_register);
-    transition->accept(visitor);
-    transition = std::move(visitor.result);
+    add_transitions_power_set(transition_set);
+    /*
+    if (transition_set.size() == 0) {
+      auto transition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+    } else {
+      for (auto& [id, transition] : transition_set) {
+        // replace owner actions of transition with compound actions of abstract agent
+        (void)id;
+        OwnerActionVisitor visitor(action_register);
+        transition->accept(visitor);
+        transition = std::move(visitor.result);
+        add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
+        add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+      }
+    }
+    */
 
     auto protocol_lines_power_set = power_set(concrete_agent.protocol.lines);
     for (const auto& line_set : protocol_lines_power_set) {
@@ -94,14 +114,75 @@ namespace mcmas {
     } 
 
     add_protocol_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), std::vector<std::string>{"null"});
-
-    add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
-    add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
-
   }
 
   std::string AbstractAgent::generate_abstract_agent_name(const std::string& concrete_name, int i) {
     return "Abs__" + concrete_name + "__" + std::to_string(i);
   }
 
+  void AbstractAgent::add_transitions_power_set(std::map<int, Expression::Ptr>& transition_set) {
+    if (transition_set.size() == 0) {
+      auto transition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+      return;
+    } 
+
+    std::vector<int> ids;
+    std::vector<Expression::Ptr> transitions;
+    for (auto& [id, transition] : transition_set) {
+      ids.emplace_back(id);
+      transitions.emplace_back(std::move(transition));
+    }
+
+    std::vector<std::vector<Expression::Ptr>> results;
+    std::vector<std::vector<Expression::Ptr>> conditions;
+
+    DynamicBitset bits(transition_set.size());
+    do {
+      std::vector<Expression::Ptr> result;
+      std::vector<Expression::Ptr> condition;
+
+      int i = 0;
+      for (auto bit : bits) {
+        if (bit) {
+          result.emplace_back(Expression::Eq(Expression::Id("from_" + std::to_string(ids[i])), Expression::Bool(true)));
+          condition.emplace_back(transitions[i]->clone());
+        } else {
+          result.emplace_back(Expression::Eq(Expression::Id("from_" + std::to_string(ids[i])), Expression::Bool(false)));
+          condition.emplace_back(Expression::Not(transitions[i]->clone()));
+        }
+        ++i;
+      }
+
+      if (bits.some()) {
+        result.emplace_back(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)));
+      } else {
+        result.emplace_back(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)));
+      }
+
+      results.emplace_back(std::move(result));
+      conditions.emplace_back(std::move(condition));
+
+      ++bits;
+    } while (bits.some());
+
+    std::vector<Expression::Ptr> conjunct_results;
+    std::vector<Expression::Ptr> conjunct_conditions;
+
+    for (auto& results_set : results) {
+      conjunct_results.emplace_back(Expression::And(std::move(results_set)));
+    }
+
+    for (auto& conditions_set : conditions) {
+      conjunct_conditions.emplace_back(Expression::And(std::move(conditions_set)));
+    }
+
+    for (size_t i = 0; i < conjunct_results.size(); ++i) {
+      OwnerActionVisitor visitor(action_register);
+      conjunct_conditions[i]->accept(visitor);
+      conjunct_conditions[i] = std::move(visitor.result);
+      add_evolution_line(std::move(conjunct_results[i]), std::move(conjunct_conditions[i]));
+    }
+  }
 }

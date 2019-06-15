@@ -192,4 +192,29 @@ namespace mcmas {
     return result;
   }
 
+  void SwarmSystem::print() const {
+    std::cout << "Semantics=MultiAssignment;\n";
+
+    std::cout << environment.to_string() + "\n";
+
+    for (const auto& concrete_agent : concrete_agents) {
+      std::cout << concrete_agent.to_string() + "\n";
+    }
+    
+    for (const auto& abstract_agent : abstract_agents) {
+      std::cout << abstract_agent.to_string() + "\n";
+    }
+
+    std::cout << evaluation.to_string() + "\n";
+
+    std::cout << "InitStates\n";
+    std::cout << init_states->to_string() + ";\n";
+    std::cout << "end InitStates\n\n";
+
+    std::cout << "Formulae\n";
+    for (auto& formula : formulas) {
+      std::cout << formula.formula->to_string() + ";\n";
+    }
+    std::cout << "end Formulae\n";
+  }
 }
