@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
   fs.close();
   */
 
-  mcmas::parser::do_parse();
+  //mcmas::parser::do_parse();
   //std::cout << ss.to_string() << std::endl;
 
 }
