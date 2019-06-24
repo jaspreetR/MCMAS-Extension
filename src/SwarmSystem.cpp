@@ -21,7 +21,6 @@ namespace mcmas {
     
     this->environment = environment.clone();
 
-    // TODO: get rid of this hacky stuff by allowing mcmas to accept const expressions in its conditions
     this->environment.add_obs_variable("env_val_true", BOOL());
     this->environment.init_condition = Expression::And (
                                          Expression::Eq(Expression::Id("env_val_true"), Expression::Bool(true)),
@@ -70,9 +69,12 @@ namespace mcmas {
     }
 
     abstract_agents = agent.generate_abstract_agents();
+    
     for (const auto& abstract_agent : abstract_agents) {
       ga_visitor.add_actions_from_aa(abstract_agent);
     }
+
+    this->environment.apply_global_action_transform(ga_visitor);
 
     for (auto& concrete_agent : concrete_agents) {
       concrete_agent.apply_global_action_transform(ga_visitor);
@@ -123,16 +125,6 @@ namespace mcmas {
                            Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false))
                          );
       }
-
-      /*
-      auto init_condition = Expression::Or(
-                              Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
-                              Expression::And(
-                                std::move(subbed_init_condition),
-                                Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
-                              )
-                            );
-      */
 
       init_conditions.emplace_back(std::move(init_condition));
 
@@ -192,29 +184,30 @@ namespace mcmas {
     return result;
   }
 
-  void SwarmSystem::print() const {
-    std::cout << "Semantics=MultiAssignment;\n";
+  void SwarmSystem::print(std::ofstream& fs) const {
+    std::cout << "Printing..." << std::endl;
+    fs << "Semantics=MultiAssignment;\n";
 
-    std::cout << environment.to_string() + "\n";
+    fs << environment.to_string() + "\n";
 
     for (const auto& concrete_agent : concrete_agents) {
-      std::cout << concrete_agent.to_string() + "\n";
+      fs << concrete_agent.to_string() + "\n";
     }
     
     for (const auto& abstract_agent : abstract_agents) {
-      std::cout << abstract_agent.to_string() + "\n";
+      fs << abstract_agent.to_string() + "\n";
     }
 
-    std::cout << evaluation.to_string() + "\n";
+    fs << evaluation.to_string() + "\n";
 
-    std::cout << "InitStates\n";
-    std::cout << init_states->to_string() + ";\n";
-    std::cout << "end InitStates\n\n";
+    fs << "InitStates\n";
+    fs << init_states->to_string() + ";\n";
+    fs << "end InitStates\n\n";
 
-    std::cout << "Formulae\n";
+    fs << "Formulae\n";
     for (auto& formula : formulas) {
-      std::cout << formula.formula->to_string() + ";\n";
+      fs << formula.formula->to_string() + ";\n";
     }
-    std::cout << "end Formulae\n";
+    fs << "end Formulae\n";
   }
 }

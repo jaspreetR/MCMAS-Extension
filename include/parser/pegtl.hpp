@@ -48,6 +48,8 @@
 // The following are not included by
 // default because they include <iostream>.
 
-// #include "pegtl/analyze.hpp"
+#include "pegtl/analyze.hpp"
+#include "pegtl/contrib/parse_tree.hpp"
+#include "pegtl/contrib/parse_tree_to_dot.hpp"
 
 #endif

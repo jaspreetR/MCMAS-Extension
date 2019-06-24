@@ -1,6 +1,7 @@
 #ifndef MCMAS_SWARMSYSTEM_HPP
 #define MCMAS_SWARMSYSTEM_HPP
 #include <vector>
+#include <fstream>
 #include "AbstractAgent.hpp"
 #include "Evaluation.hpp"
 #include "expressions/Expression.hpp"
@@ -26,7 +27,7 @@ namespace mcmas {
                   std::vector<IndexedFormula>&& formulas);
 
       std::string to_string() const;
-      void print() const;
+      void print(std::ofstream& fs) const;
 
   };
 }

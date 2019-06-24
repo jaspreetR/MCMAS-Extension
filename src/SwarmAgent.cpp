@@ -1,8 +1,10 @@
 #include "SwarmAgent.hpp"
 #include <cassert>
+#include <algorithm>
 #include "utils/Misc.hpp"
 #include "visitors/GlobalActionVisitor.hpp"
 #include "visitors/OwnerReplaceVisitor.hpp"
+#include "visitors/OwnerActionVisitor.hpp"
 #include "AbstractAgent.hpp"
 
 namespace mcmas {
@@ -98,6 +100,23 @@ namespace mcmas {
 
     std::vector<std::map<int, std::vector<Expression::Ptr>>> activation_conditions(states.size());
 
+    auto actions_copy = actions;
+    std::sort(actions_copy.begin(), actions_copy.end());
+    auto actions_power_set = power_set(actions_copy);
+
+    std::vector<std::string> abstract_actions = {"null"};
+
+    std::map<std::string, std::vector<std::string>> action_register;
+    for (const auto& actions_subset : actions_power_set) {
+      auto abstract_action = concat_strings(actions_subset);
+
+      for (const auto& action : actions_subset) {
+        action_register[action].push_back(abstract_action);
+      }
+
+      abstract_actions.emplace_back(std::move(abstract_action));
+    }
+
     for (size_t k = 0; k < states.size(); ++k) {
       const auto& state = states[k];
       for (size_t i = 0; i < ev_transitions.size(); ++i) {
@@ -131,7 +150,9 @@ namespace mcmas {
                                    );
             */
 
-            //TODO: need to add const var values to environment and then retrieve them
+            OwnerActionVisitor oavisitor(action_register);
+            activation_condition->accept(oavisitor);
+            activation_condition = std::move(oavisitor.result);
 
             OwnerReplaceVisitor visitor(AbstractAgent::generate_abstract_agent_name(name, k)); 
             activation_condition->accept(visitor);
@@ -153,9 +174,6 @@ namespace mcmas {
           disjunct_activation_condition = Expression::Or(std::move(conditions));
         } else if (conditions.size() == 1) {
           disjunct_activation_condition = std::move(conditions[0]);
-        } else if (conditions.size() == 0) {
-          // cant put "false" here so need to put equivalent false condition
-          disjunct_activation_condition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
         } else {
           std::cout << "should not reach here" << std::endl;
         }

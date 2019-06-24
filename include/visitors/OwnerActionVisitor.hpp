@@ -55,7 +55,11 @@ namespace mcmas {
           if (left_id && left_id->is_owner_action()) {
             auto* action_id = static_cast<Identifier*>(expr.right.get());
             auto& action = action_id->id;
-            result = action_register.at(action)->clone();
+            if (action == "null") {
+              result = expr.clone();
+            } else {
+              result = action_register.at(action)->clone();
+            }
             return;
           }
         }

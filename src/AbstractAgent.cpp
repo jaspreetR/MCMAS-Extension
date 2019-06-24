@@ -10,6 +10,7 @@ namespace mcmas {
                                std::map<int, Expression::Ptr>&& transition_set, int id) 
   : state(state)
   {
+    bool with_metadata = true;
     name = generate_abstract_agent_name(concrete_agent.name, id);
 
     add_variable("is_active", BOOL());
@@ -19,13 +20,16 @@ namespace mcmas {
       add_variable(var_name, var_type);
     }
 
-    for (const auto& [id, expr] : transition_set) {
-      (void)expr;
-      add_variable("from_" + std::to_string(id), BOOL());
+    std::vector<Expression::Ptr> init_var_conditions;
+    if (with_metadata) {
+      for (const auto& [id, expr] : transition_set) {
+        (void)expr;
+        std::string var_name = "from_" + std::to_string(id);
+        add_variable(var_name, BOOL());
+        init_var_conditions.emplace_back(Expression::Eq(Expression::Id(var_name), Expression::Bool(false)));
+      }
     }
 
-    std::vector<Expression::Ptr> init_var_conditions;
-    init_var_conditions.reserve(state.get().size());
     for (const auto& [var_name, value] : state.get()) {
       Expression::Ptr value_expr = std::visit(Overload{
         [](int x){ return Expression::Int(x); },
@@ -39,7 +43,6 @@ namespace mcmas {
     auto concrete_agent_actions = concrete_agent.actions;
     std::sort(concrete_agent_actions.begin(), concrete_agent_actions.end());
     
-    // TODO: generate these actions outside the constructor and store as shared pointer
     auto actions_power_set = power_set(concrete_agent_actions);
 
     std::vector<std::string> abstract_actions = {"null"};
@@ -56,24 +59,11 @@ namespace mcmas {
 
     add_actions(abstract_actions);
 
-    add_transitions_power_set(transition_set);
-    /*
-    if (transition_set.size() == 0) {
-      auto transition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
-      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
-      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+    if (with_metadata) {
+      add_transitions_power_set(transition_set);
     } else {
-      for (auto& [id, transition] : transition_set) {
-        // replace owner actions of transition with compound actions of abstract agent
-        (void)id;
-        OwnerActionVisitor visitor(action_register);
-        transition->accept(visitor);
-        transition = std::move(visitor.result);
-        add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
-        add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
-      }
+      add_single_transition(transition_set);
     }
-    */
 
     auto protocol_lines_power_set = power_set(concrete_agent.protocol.lines);
     for (const auto& line_set : protocol_lines_power_set) {
@@ -82,8 +72,6 @@ namespace mcmas {
       std::set<std::string> actions;
 
       for (auto& line : line_set) {
-        //auto subst_condition = state.substitute(line.condition.get());
-        //conditions.emplace_back(std::move(subst_condition));
         conditions.emplace_back(line.condition->clone());
         for (auto& action : line.enabled_actions) {
           actions.emplace(std::move(action));
@@ -118,6 +106,26 @@ namespace mcmas {
 
   std::string AbstractAgent::generate_abstract_agent_name(const std::string& concrete_name, int i) {
     return "Abs__" + concrete_name + "__" + std::to_string(i);
+  }
+
+  void AbstractAgent::add_single_transition(std::map<int, Expression::Ptr>& transition_set) {
+    if (transition_set.size() == 0) {
+      auto transition = Expression::Not(Expression::Eq(Expression::Id("is_active"), Expression::Id("is_active")));
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), transition->clone());
+      add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(transition->clone()));
+      return;
+    } 
+
+    std::vector<Expression::Ptr> conditions;
+    for (auto& [id, condition] : transition_set) {
+      (void)id;
+      conditions.emplace_back(std::move(condition));
+    }
+
+    Expression::Ptr disjunct_condition = Expression::Or(std::move(conditions));
+    add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(true)), disjunct_condition->clone());
+    add_evolution_line(Expression::Eq(Expression::Id("is_active"), Expression::Bool(false)), Expression::Not(disjunct_condition->clone()));
+
   }
 
   void AbstractAgent::add_transitions_power_set(std::map<int, Expression::Ptr>& transition_set) {
@@ -179,9 +187,6 @@ namespace mcmas {
     }
 
     for (size_t i = 0; i < conjunct_results.size(); ++i) {
-      OwnerActionVisitor visitor(action_register);
-      conjunct_conditions[i]->accept(visitor);
-      conjunct_conditions[i] = std::move(visitor.result);
       add_evolution_line(std::move(conjunct_results[i]), std::move(conjunct_conditions[i]));
     }
   }

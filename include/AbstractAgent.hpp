@@ -15,6 +15,7 @@ namespace mcmas {
       static std::string generate_abstract_agent_name(const std::string& concrete_name, int i);
     private:
       void add_transitions_power_set(std::map<int, Expression::Ptr>& transitions);
+      void add_single_transition(std::map<int, Expression::Ptr>& transitions);
       
  };
 
