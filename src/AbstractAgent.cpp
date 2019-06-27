@@ -7,10 +7,9 @@
 namespace mcmas {
 
   AbstractAgent::AbstractAgent(const AgentState& state, const SwarmAgent& concrete_agent, 
-                               std::map<int, Expression::Ptr>&& transition_set, int id) 
+                               std::map<int, Expression::Ptr>&& transition_set, int id, bool with_metadata) 
   : state(state)
   {
-    bool with_metadata = true;
     name = generate_abstract_agent_name(concrete_agent.name, id);
 
     add_variable("is_active", BOOL());

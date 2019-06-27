@@ -83,7 +83,7 @@ namespace mcmas {
     return states;
   }
 
-  std::vector<AbstractAgent> SwarmAgent::generate_abstract_agents() const {
+  std::vector<AbstractAgent> SwarmAgent::generate_abstract_agents(bool has_meta) const {
 
     std::vector<Expression*> ev_transitions;
     ev_transitions.reserve(evolution.lines.size());
@@ -123,7 +123,6 @@ namespace mcmas {
         auto* transition = ev_transitions[i];
         auto new_state = state.apply(transition);
 
-        // TODO: quadratic complexity could be n log n
         for (size_t j = 0; j < states.size(); ++j) {
           if (new_state == states[j]) {
             //add null action check to see if previous state is even active
@@ -137,18 +136,6 @@ namespace mcmas {
                                      ), 
                                      std::move(activation_condition)
                                    );
-
-            /*
-            auto activation_condition = Expression::And(
-                                     Expression::Not(
-                                       Expression::Eq(
-                                         Expression::Id("Action"), 
-                                         Expression::Id("null")
-                                       )
-                                     ), 
-                                     ev_conditions[i]->clone()
-                                   );
-            */
 
             OwnerActionVisitor oavisitor(action_register);
             activation_condition->accept(oavisitor);
@@ -186,7 +173,7 @@ namespace mcmas {
     result.reserve(states.size());
 
     for (size_t i = 0; i < states.size(); ++i) {
-      auto agent = AbstractAgent(states[i], *this, std::move(disjunct_activation_condition_sets[i]), i);
+      auto agent = AbstractAgent(states[i], *this, std::move(disjunct_activation_condition_sets[i]), i, has_meta);
       result.emplace_back(std::move(agent));
     }
 

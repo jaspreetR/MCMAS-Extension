@@ -24,7 +24,8 @@ namespace mcmas {
                   const SwarmAgent& agent, 
                   int num_agents, 
                   const Evaluation& evaluation,
-                  std::vector<IndexedFormula>&& formulas);
+                  std::vector<IndexedFormula>&& formulas,
+                  bool is_abstract = false, bool has_meta = false);
 
       std::string to_string() const;
       void print(std::ofstream& fs) const;

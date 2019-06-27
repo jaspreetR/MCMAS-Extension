@@ -17,7 +17,8 @@ namespace mcmas {
                            const SwarmAgent& agent, 
                            int num_agents, 
                            const Evaluation& evaluation,
-                           std::vector<IndexedFormula>&& formulas) {
+                           std::vector<IndexedFormula>&& formulas,
+                           bool is_abstract, bool has_meta) {
     
     this->environment = environment.clone();
 
@@ -68,8 +69,10 @@ namespace mcmas {
       ga_visitor.add_actions_from_sa(new_agent);
     }
 
-    abstract_agents = agent.generate_abstract_agents();
-    
+    if (is_abstract) {
+      abstract_agents = agent.generate_abstract_agents(has_meta);
+    }
+
     for (const auto& abstract_agent : abstract_agents) {
       ga_visitor.add_actions_from_aa(abstract_agent);
     }
@@ -97,41 +100,45 @@ namespace mcmas {
     std::vector<Expression::Ptr> abstract_active_exprs;
     abstract_active_exprs.reserve(abstract_agents.size());
 
-    for (auto& abstract_agent : abstract_agents) {
-      // eval init condition when given abstract agent state and simply allow those agents where it holds to be optionally active
-      auto result = abstract_agent.state.evaluate(agent.init_condition.get());
-      auto* bool_result = std::get_if<bool>(&result);
+    if (is_abstract) {
+      for (auto& abstract_agent : abstract_agents) {
+        // eval init condition when given abstract agent state and simply allow those agents where it holds to be optionally active
+        auto result = abstract_agent.state.evaluate(agent.init_condition.get());
+        auto* bool_result = std::get_if<bool>(&result);
 
-      if (bool_result == nullptr) {
-        std::cout << "invalid agent init condition" << std::endl;
-        throw new std::exception();
+        if (bool_result == nullptr) {
+          std::cout << "invalid agent init condition" << std::endl;
+          throw new std::exception();
+        }
+
+
+        Expression::Ptr init_condition = std::move(abstract_agent.init_condition);
+        OwnerReplaceVisitor abs_or_visitor(abstract_agent.name);
+        init_condition->accept(abs_or_visitor);
+
+        if (*bool_result) {
+          init_condition = Expression::And(
+                            std::move(init_condition),  
+                            Expression::Or(
+                              Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
+                              Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
+                            )
+                          );
+        } else {
+          init_condition = Expression::And(
+                            std::move(init_condition),
+                            Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false))
+                          );
+        }
+
+        init_conditions.emplace_back(std::move(init_condition));
+
+        abstract_active_exprs.emplace_back(Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true)));
       }
 
-      Expression::Ptr init_condition = std::move(abstract_agent.init_condition);
-      OwnerReplaceVisitor abs_or_visitor(abstract_agent.name);
-      init_condition->accept(abs_or_visitor);
-
-      if (*bool_result) {
-        init_condition = Expression::And(
-                           std::move(init_condition),  
-                           Expression::Or(
-                             Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false)),
-                             Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true))
-                           )
-                         );
-      } else {
-        init_condition = Expression::And(
-                           std::move(init_condition),
-                           Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(false))
-                         );
-      }
-
-      init_conditions.emplace_back(std::move(init_condition));
-
-      abstract_active_exprs.emplace_back(Expression::Eq(Expression::Id(abstract_agent.name, "is_active"), Expression::Bool(true)));
+      init_conditions.emplace_back(Expression::Or(std::move(abstract_active_exprs)));
     }
 
-    init_conditions.emplace_back(Expression::Or(std::move(abstract_active_exprs)));
     init_states = Expression::And(std::move(init_conditions));
 
     Evaluation new_evaluation;
@@ -185,7 +192,7 @@ namespace mcmas {
   }
 
   void SwarmSystem::print(std::ofstream& fs) const {
-    std::cout << "Printing..." << std::endl;
+    std::cout << "Printing Model To File..." << std::endl;
     fs << "Semantics=MultiAssignment;\n";
 
     fs << environment.to_string() + "\n";

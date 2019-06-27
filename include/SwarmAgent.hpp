@@ -39,7 +39,7 @@ namespace mcmas {
       void apply_global_action_transform(mcmas::GlobalActionVisitor& visitor);
       std::vector<AgentState> get_all_states() const;
 
-      std::vector<AbstractAgent> generate_abstract_agents() const;
+      std::vector<AbstractAgent> generate_abstract_agents(bool has_meta) const;
 
       std::string to_string() const;
 

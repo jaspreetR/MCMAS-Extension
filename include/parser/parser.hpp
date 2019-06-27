@@ -1,7 +1,8 @@
 #ifndef MCMAS_PARSER_HPP
 #define MCMAS_PARSE_HPP
+#include <optional>
 #include "parser/pegtl.hpp"
-#include "expressions/Expression.hpp"
+#include "SwarmSystem.hpp"
 
 namespace mcmas {
 namespace parser {
@@ -26,10 +27,22 @@ namespace parser {
   struct or_str : TAO_PEGTL_STRING("or") {};
   struct and_str : TAO_PEGTL_STRING("and") {};
   struct if_str : TAO_PEGTL_STRING("if") {};
+  struct ag_str : TAO_PEGTL_STRING("AG") {};
+  struct eg_str : TAO_PEGTL_STRING("EG") {};
+  struct af_str : TAO_PEGTL_STRING("AF") {};
+  struct ef_str : TAO_PEGTL_STRING("EF") {};
+  struct ax_str : TAO_PEGTL_STRING("AX") {};
+  struct ex_str : TAO_PEGTL_STRING("EX") {};
+  struct a_str : TAO_PEGTL_STRING("A") {};
+  struct e_str : TAO_PEGTL_STRING("E") {};
+  struct u_str : TAO_PEGTL_STRING("U") {};
+  struct k_str : TAO_PEGTL_STRING("K") {};
 
   struct str_keyword : pegtl::sor< true_str, false_str, agent_str, actions_str, protocol_str, 
                                    evolution_str, evaluation_str, initstate_str, formulae_str, 
-                                   end_str, vars_str, boolean_str, and_str, or_str, if_str > {};
+                                   end_str, vars_str, boolean_str, and_str, or_str, if_str,
+                                   ag_str, eg_str, af_str, ef_str, ax_str, ex_str, a_str, e_str,
+                                   u_str, k_str > {};
 
   struct true_literal : key< true_str > {};
   struct false_literal : key< false_str > {};
@@ -46,6 +59,16 @@ namespace parser {
   struct or_literal : key< or_str > {};
   struct and_literal : key< and_str > {};
   struct if_literal : key< if_str > {};
+  struct ag_literal : key< ag_str > {};
+  struct eg_literal : key< eg_str > {};
+  struct af_literal : key< af_str > {};
+  struct ef_literal : key< ef_str > {};
+  struct ax_literal : key< ax_str > {};
+  struct ex_literal : key< ex_str > {};
+  struct a_literal : key< a_str > {};
+  struct e_literal : key< e_str > {};
+  struct u_literal : key< u_str > {};
+  struct k_literal : key< k_str > {};
 
   struct single_id : pegtl::seq< pegtl::not_at< key< str_keyword > >, pegtl::identifier > {};
   struct qual_id : pegtl::seq< single_id, pegtl::if_must< pegtl::one< '.' >, single_id > > {};
@@ -59,10 +82,6 @@ namespace parser {
   struct close_bracket : pegtl::seq< pegtl::star< pegtl::space >, pegtl::one< ')' > > {};
   struct open_curly : pegtl::seq< pegtl::one< '{' >, pegtl::star< pegtl::space > > {};
   struct close_curly : pegtl::seq< pegtl::star< pegtl::space >, pegtl::one< '}' > > {};
-
-  ////////////////////////////
-  // Expression Rules
-  ////////////////////////////
 
   struct and_op : and_literal {};
   struct or_op : or_literal {};
@@ -84,6 +103,8 @@ namespace parser {
   struct sub_op : TAO_PEGTL_STRING("-") {};
   struct mul_op : TAO_PEGTL_STRING("*") {};
   struct div_op : TAO_PEGTL_STRING("/") {};
+
+  struct arrow_op : TAO_PEGTL_STRING("->") {};
 
   template <typename Rule>
   using pad_ws = pegtl::pad< Rule, pegtl::space >;
@@ -149,7 +170,56 @@ namespace parser {
 
   struct arith_element : pegtl::sor< bracketed< arith_expr >, var_value > {};
 
-  //////////////////////////////////
+  ////////////////////////////
+  // Formula Rules
+  ////////////////////////////
+  
+  struct formula;
+  struct formula_1;
+  struct formula_2;
+  struct formula_3;
+  struct formula_4;
+  struct formula_5;
+  struct arrow_formula;
+  struct or_formula;
+  struct and_formula;
+  struct not_formula;
+  struct ax_formula;
+  struct ex_formula;
+  struct af_formula;
+  struct ef_formula;
+  struct ag_formula;
+  struct eg_formula;
+  struct au_formula;
+  struct eu_formula;
+  struct k_formula;
+
+  struct arrow_formula : pegtl::seq< formula_1, pad_ws< arrow_op >, formula > {};
+  struct formula : pegtl::sor< arrow_formula, formula_1 > {};
+
+  struct or_formula : pegtl::seq< formula_2, pad_ws< or_op >, formula_1 > {};
+  struct formula_1 : pegtl::sor< or_formula, formula_2 > {};
+
+  struct and_formula : pegtl::seq< formula_3, pad_ws< and_op >, formula_2 > {};
+  struct formula_2 : pegtl::sor< and_formula, formula_3 > {};
+
+  struct not_formula : pegtl::seq< pad_ws< not_op >, formula_3 > {};
+  struct formula_3 : pegtl::sor< not_formula, formula_4 > {};
+
+  struct ax_formula : pegtl::seq< pad_ws< ax_literal >, formula_4 > {};
+  struct ex_formula : pegtl::seq< pad_ws< ex_literal >, formula_4 > {};
+  struct af_formula : pegtl::seq< pad_ws< af_literal >, formula_4 > {};
+  struct ef_formula : pegtl::seq< pad_ws< ef_literal >, formula_4 > {};
+  struct ag_formula : pegtl::seq< pad_ws< ag_literal >, formula_4 > {};
+  struct eg_formula : pegtl::seq< pad_ws< eg_literal >, formula_4 > {};
+  struct au_formula : pegtl::seq< pad_ws< a_literal >, bracketed< pegtl::seq< formula_4, pad_ws< u_literal >, formula_4 > > > {};
+  struct eu_formula : pegtl::seq< pad_ws< e_literal >, bracketed< pegtl::seq< formula_4, pad_ws< u_literal >, formula_4 > > > {};
+  struct k_formula : pegtl::seq< pad_ws< k_literal >, bracketed< pegtl::seq< single_id, pad_ws< pegtl::one< ',' > >, formula_4 > > > {};
+  struct atom_formula : pegtl::seq< single_id, pad_ws< bracketed< single_id > > > {};
+  struct formula_4 : pegtl::sor< ax_formula, ex_formula, af_formula, ef_formula, ag_formula, eg_formula, 
+                                 au_formula, eu_formula, k_formula, atom_formula, bracketed< formula > > {};
+
+  ////////////////////////////
 
   struct bool_var_def : pegtl::seq< single_id, pad_ws< pegtl::one< ':' > >, boolean_literal > {};
   struct int_var_def : pegtl::seq< single_id, pad_ws< pegtl::one< ':' > >, pegtl::if_must< number, pad_ws< pegtl::two< '.' > >, number > > {};
@@ -166,7 +236,7 @@ namespace parser {
   struct evolution_line : pegtl::seq< bool_expr, pad_ws< if_literal >, bool_expr, pad_ws< pegtl::one< ';' > > > {};
   struct evolution_def : pegtl::if_must< evolution_literal, pad_ws< pegtl::opt< pegtl::one< ':' > > >, pegtl::star< pad_ws< evolution_line > >, pad_ws< end_literal >, evolution_literal > {};
 
-  struct agent_contents : pegtl::seq< pegtl::opt< pad_ws< vars_def > >, pad_ws< initstate_def >, pad_ws< action_def >, pad_ws< protocol_def >, pad_ws< evolution_def > > {};
+  struct agent_contents : pegtl::seq< pegtl::opt< pad_ws< vars_def > >, pad_ws< initstate_def >, pad_ws< action_def >, pad_ws< protocol_def >, pegtl::opt< pad_ws< evolution_def > > > {};
   struct agent_def : pegtl::if_must< agent_literal, pad_ws< single_id >, agent_contents, pad_ws< end_literal >, agent_literal > {}; 
   
   struct environment_str : TAO_PEGTL_STRING("Environment") {};
@@ -175,7 +245,15 @@ namespace parser {
   struct evaluation_line : pegtl::seq< single_id, pad_ws< if_literal >, bool_expr, pad_ws< pegtl::one< ';' > > > {};
   struct evaluation_def : pegtl::if_must< evaluation_literal, pegtl::plus< pad_ws< evaluation_line > >, pad_ws< end_literal >, evaluation_literal > {};
 
-  struct grammar : pegtl::must< bool_expr, pegtl::eof > {};
+  struct formulae_placeholders : bracketed< pegtl::list_must< single_id, pegtl::one< ',' >, pegtl::space > > {};
+  struct formulae_line : pegtl::seq< pad_ws < formulae_placeholders >, formula, pad_ws< pegtl::one< ';' > > > {};
+  struct formulae_def : pegtl::if_must< formulae_literal, pegtl::plus< pad_ws< formulae_line > >, pad_ws< end_literal >, formulae_literal > {};
+
+  struct grammar : pegtl::must< pad_ws< environment_def >, 
+                                pad_ws< agent_def >,
+                                pad_ws< evaluation_def >,
+                                pad_ws< formulae_def>,
+                                pegtl::eof > {};
 
   template <typename Rule>
   struct test : pegtl::must<Rule, pegtl::eof> {};
@@ -208,6 +286,20 @@ namespace parser {
       sub_expr,
       mul_expr,
       div_expr,
+      arrow_formula,
+      or_formula,
+      and_formula,
+      not_formula,
+      ax_formula,
+      ex_formula,
+      af_formula,
+      ef_formula,
+      ag_formula,
+      eg_formula,
+      au_formula,
+      eu_formula,
+      k_formula,
+      atom_formula,
       vars_def,
       int_var_def,
       bool_var_def,
@@ -219,16 +311,155 @@ namespace parser {
       evolution_def,
       agent_def,
       environment_def,
-      evaluation_def
+      evaluation_line,
+      evaluation_def,
+      formulae_def,
+      formulae_line,
+      formulae_placeholders
     >
   >;
 
   struct SwarmSystemGenerator {
-    void generate_swarm_system(const std::unique_ptr<pegtl::parse_tree::node>& n) {
-      
+    using NodePtr = std::unique_ptr<pegtl::parse_tree::node>;
+
+    const NodePtr root;
+
+    SwarmSystemGenerator(NodePtr&& root) : root(std::move(root)) {
+
     }
 
-    Expression::Ptr gen_expr(const std::unique_ptr<pegtl::parse_tree::node>& n) {
+    SwarmSystem generate_swarm_system(int num_concrete, bool has_meta) {
+      auto& children = root->children;
+      SwarmAgent env = gen_env(children[0]);
+      SwarmAgent agent = gen_agent(children[1]);
+      Evaluation evaluation = gen_eval(children[2]);
+      IndexedFormula formula = gen_indexed_formula(children[3]);
+      int m = formula.placeholders.size();
+      std::vector<IndexedFormula> formulas;
+      formulas.emplace_back(std::move(formula));
+
+      if (num_concrete == -1) {
+        return SwarmSystem(env, agent, m, evaluation, std::move(formulas), true, has_meta);
+      } else if (num_concrete >= m) {
+        return SwarmSystem(env, agent, num_concrete, evaluation, std::move(formulas), false, false);
+      } else {
+        std::cout << "Error: number of concrete agents too small" << std::endl;
+        return SwarmSystem(env, agent, m, evaluation, std::move(formulas), false, false);
+      }
+    }
+
+    Evaluation gen_eval(const NodePtr& n) {
+      Evaluation evaluation;
+      for (auto& eval_line : n->children) {
+        auto& children = eval_line->children;
+        evaluation.lines.emplace_back(EvaluationLine(children[0]->string(), gen_expr(children[1])));
+      }
+
+      return evaluation;
+    }
+
+    IndexedFormula gen_indexed_formula(const NodePtr& n) {
+      auto& first_formula = n->children[0];
+      auto& placeholders = first_formula->children[0];
+      std::vector<std::string> placeholder_strs;
+      for (auto& placeholder : placeholders->children) {
+        placeholder_strs.emplace_back(placeholder->string()); 
+      }
+
+      if (n->children.size() != 1) {
+        std::cout << "Only a single formula can be defined" << std::endl;
+      }
+
+      return IndexedFormula(placeholder_strs, gen_formula(first_formula->children[1]));
+    }
+
+    SwarmAgent gen_env(const NodePtr& n) {
+      auto& children = n->children;
+      SwarmAgent env;
+      env.name = "Environment";
+
+      gen_var(children[0], env);
+      gen_initstate(children[1], env);
+      gen_actions(children[2], env);
+      gen_protocol(children[3], env);
+
+      if (children.size() > 4) {
+        gen_evolution(children[4], env);
+      }
+
+      return env;
+    }
+
+    SwarmAgent gen_agent(const NodePtr& n) {
+      auto& children = n->children;
+      SwarmAgent agent;
+      agent.name = children[0]->string();
+      gen_var(children[1], agent);
+      gen_initstate(children[2], agent);
+      gen_actions(children[3], agent);
+      gen_protocol(children[4], agent);
+
+      if (children.size() > 5) {
+        gen_evolution(children[5], agent);
+      }
+
+      return agent;
+    }
+
+    void gen_var(const NodePtr& n, SwarmAgent& agent) {
+      for (auto& var_def : n->children) {
+        auto& children = var_def->children;
+
+        if (var_def->is<int_var_def>()) {
+          auto var_name = children[0]->string();
+          auto min_range = std::stoi(children[1]->string());
+          auto max_range = std::stoi(children[2]->string());
+          agent.add_variable(var_name, RANGED_INT(min_range, max_range));
+        } else if (var_def->is<bool_var_def>()) {
+          auto var_name = children[0]->string();
+          agent.add_variable(var_name, BOOL()); 
+        } else {
+          std::cout << "invalid var def" << std::endl;
+        }
+      }
+    }
+
+    void gen_initstate(const NodePtr& n, SwarmAgent& agent) {
+      agent.add_init_condition(gen_expr(n->children[0]));
+    }
+
+    void gen_actions(const NodePtr& n, SwarmAgent& agent) {
+      std::vector<std::string> actions;
+      for (auto& action : n->children) {
+        actions.emplace_back(action->string());
+      }
+      agent.add_actions(std::move(actions));
+    }
+
+    void gen_protocol(const NodePtr& n, SwarmAgent& agent) {
+      for (auto& protocol_line : n->children) {
+        auto& children = protocol_line->children;
+        auto condition = gen_expr(children[0]);
+        std::vector<std::string> actions;
+
+        for (size_t i = 1; i < children.size(); ++i) {
+          actions.emplace_back(children[i]->string());
+        }
+
+        agent.add_protocol_line(std::move(condition), std::move(actions));
+      }
+    }
+
+    void gen_evolution(const NodePtr& n, SwarmAgent& agent) {
+      for (auto& evolution_line : n->children) {
+        auto& children = evolution_line->children;
+        auto transition = gen_expr(children[0]);
+        auto condition = gen_expr(children[1]);
+        agent.add_evolution_line(std::move(transition), std::move(condition));
+      }
+    }
+
+    Expression::Ptr gen_expr(const NodePtr& n) {
       auto& children = n->children;
 
       if (n->is<true_literal>()) { return Expression::Bool(true); }
@@ -258,29 +489,47 @@ namespace parser {
         return Expression::Ptr();
       }
     }
+
+    Formula::Ptr gen_formula(const NodePtr& n) {
+      auto& children = n->children;
+
+      if (n->is<atom_formula>()) { return Formula::Atom(children[1]->string(), children[0]->string()); }
+      else if (n->is<arrow_formula>()) { return Formula::Arrow(gen_formula(children[0]), gen_formula(children[1])); }
+      else if (n->is<or_formula>()) { return Formula::Or(gen_formula(children[0]), gen_formula(children[1])); }
+      else if (n->is<and_formula>()) { return Formula::And(gen_formula(children[0]), gen_formula(children[1])); }
+      else if (n->is<not_formula>()) { return Formula::Not(gen_formula(children[0])); }
+      else if (n->is<af_formula>()) { return Formula::AF(gen_formula(children[0])); }
+      else if (n->is<ef_formula>()) { return Formula::EF(gen_formula(children[0])); }
+      else if (n->is<ag_formula>()) { return Formula::AG(gen_formula(children[0])); }
+      else if (n->is<eg_formula>()) { return Formula::EG(gen_formula(children[0])); }
+      else if (n->is<ax_formula>()) { return Formula::AX(gen_formula(children[0])); }
+      else if (n->is<ex_formula>()) { return Formula::EX(gen_formula(children[0])); }
+      else if (n->is<k_formula>()) { return Formula::K(children[0]->string(), gen_formula(children[1])); }
+      else if (n->is<au_formula>()) { return Formula::AU(gen_formula(children[0]), gen_formula(children[1])); }
+      else if (n->is<eu_formula>()) { return Formula::EU(gen_formula(children[0]), gen_formula(children[1])); }
+      else {
+        std::cout << "invalid formula: " << n->string() << std::endl;
+        return Formula::Ptr();
+      }
+    }
+
   };
 
-  void do_parse() {
-    std::string input = "(a = b or c = d) and e = f";
-    std::string var_test = "Vars : hello : 3..9; true_blue : boolean; end Vars";
-    std::string action_test = "Actions =  { hello, gg, kk }  ;";
-    std::string protocol_test = "Protocol : a = b : { g, a, b }; c = d : {h, k, l}; end Protocol";
-    std::string initstate_test = "InitState : a = b ; end InitState";
-    std::string evolution_test = "Evolution : a = b if c = d ;end Evolution";
-    std::string agent_test = "Agent Environment " + var_test + " " + initstate_test + " " + action_test + " " + protocol_test + " " + evolution_test + " end Agent";
-    std::string evaluation_test = "Evaluation stopped if a = c; end Evaluation";
-    pegtl::string_input in(evaluation_test, "");
+  std::optional<SwarmSystem> do_parse(const std::string& file_name, int num_concrete, bool has_meta) {
+    pegtl::file_input in(file_name);
     try {
-        const auto root = pegtl::parse_tree::parse< test<evaluation_def>, selector >( in );
+        std::cout << "Parsing SISPL..." << std::endl;
+        auto root = pegtl::parse_tree::parse< test<grammar>, selector >( in );
+
         if (root == nullptr) {
           std::cout << "parsing error in file" << std::endl;
-          return;
+          return std::nullopt;
         }
-        //SwarmSystemGenerator ssg;
-        //auto expr = ssg.gen_expr(root->children[0]);
-        //std::cout << expr->to_string() << std::endl;
-        pegtl::parse_tree::print_dot( std::cout, *root );
-        return;
+
+        std::cout << "Generating Model..." << std::endl;
+        SwarmSystemGenerator ssg{std::move(root)};
+        //pegtl::parse_tree::print_dot( std::cout, *ssg.root );
+        return ssg.generate_swarm_system(num_concrete, has_meta);
     }
     catch( const pegtl::parse_error& e ) {
         const auto p = e.positions.front();
@@ -289,8 +538,10 @@ namespace parser {
                   << std::string( p.byte_in_line, ' ' ) << '^' << std::endl;
     }
     catch( const std::exception& e ) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "Exception: " << e.what() << std::endl;
     }
+
+    return std::nullopt;
   }
 } // namespace parser
 } // namespace mcmas
