@@ -206,15 +206,15 @@ namespace parser {
   struct not_formula : pegtl::seq< pad_ws< not_op >, formula_3 > {};
   struct formula_3 : pegtl::sor< not_formula, formula_4 > {};
 
-  struct ax_formula : pegtl::seq< pad_ws< ax_literal >, formula_4 > {};
-  struct ex_formula : pegtl::seq< pad_ws< ex_literal >, formula_4 > {};
-  struct af_formula : pegtl::seq< pad_ws< af_literal >, formula_4 > {};
-  struct ef_formula : pegtl::seq< pad_ws< ef_literal >, formula_4 > {};
-  struct ag_formula : pegtl::seq< pad_ws< ag_literal >, formula_4 > {};
-  struct eg_formula : pegtl::seq< pad_ws< eg_literal >, formula_4 > {};
-  struct au_formula : pegtl::seq< pad_ws< a_literal >, bracketed< pegtl::seq< formula_4, pad_ws< u_literal >, formula_4 > > > {};
-  struct eu_formula : pegtl::seq< pad_ws< e_literal >, bracketed< pegtl::seq< formula_4, pad_ws< u_literal >, formula_4 > > > {};
-  struct k_formula : pegtl::seq< pad_ws< k_literal >, bracketed< pegtl::seq< single_id, pad_ws< pegtl::one< ',' > >, formula_4 > > > {};
+  struct ax_formula : pegtl::seq< pad_ws< ax_literal >, formula_3 > {};
+  struct ex_formula : pegtl::seq< pad_ws< ex_literal >, formula_3 > {};
+  struct af_formula : pegtl::seq< pad_ws< af_literal >, formula_3 > {};
+  struct ef_formula : pegtl::seq< pad_ws< ef_literal >, formula_3 > {};
+  struct ag_formula : pegtl::seq< pad_ws< ag_literal >, formula_3 > {};
+  struct eg_formula : pegtl::seq< pad_ws< eg_literal >, formula_3 > {};
+  struct au_formula : pegtl::seq< pad_ws< a_literal >, bracketed< pegtl::seq< formula, pad_ws< u_literal >, formula > > > {};
+  struct eu_formula : pegtl::seq< pad_ws< e_literal >, bracketed< pegtl::seq< formula_4, pad_ws< u_literal >, formula > > > {};
+  struct k_formula : pegtl::seq< pad_ws< k_literal >, bracketed< pegtl::seq< single_id, pad_ws< pegtl::one< ',' > >, formula > > > {};
   struct atom_formula : pegtl::seq< single_id, pad_ws< bracketed< single_id > > > {};
   struct formula_4 : pegtl::sor< ax_formula, ex_formula, af_formula, ef_formula, ag_formula, eg_formula, 
                                  au_formula, eu_formula, k_formula, atom_formula, bracketed< formula > > {};
@@ -329,6 +329,7 @@ namespace parser {
     }
 
     SwarmSystem generate_swarm_system(int num_concrete, bool has_meta) {
+      assert(num_concrete >= -1);
       auto& children = root->children;
       SwarmAgent env = gen_env(children[0]);
       SwarmAgent agent = gen_agent(children[1]);
@@ -340,11 +341,8 @@ namespace parser {
 
       if (num_concrete == -1) {
         return SwarmSystem(env, agent, m, evaluation, std::move(formulas), true, has_meta);
-      } else if (num_concrete >= m) {
-        return SwarmSystem(env, agent, num_concrete, evaluation, std::move(formulas), false, false);
       } else {
-        std::cout << "Error: number of concrete agents too small" << std::endl;
-        return SwarmSystem(env, agent, m, evaluation, std::move(formulas), false, false);
+        return SwarmSystem(env, agent, num_concrete + m, evaluation, std::move(formulas), false, false);
       }
     }
 

@@ -1,0 +1,51 @@
+Agent Environment
+  Vars:
+  dummy : boolean;
+  end Vars
+  
+  InitState
+    dummy = true;
+  end InitState
+  
+  Actions = {go};
+  
+  Protocol:
+    dummy = dummy : {go};
+  end Protocol
+  
+end Agent
+
+Agent Robot
+  Vars:
+    pos : 1..4;
+    sensor_pos : 1..4;
+    halted : boolean;
+  end Vars
+  
+  InitState
+    pos=1 and sensor_pos=1 and halted = false;
+  end InitState
+  
+  Actions = {go, go_plus, go_minus, halt, nothing};
+  
+  Protocol:
+    sensor_pos < 3 and halted=false : {go, go_plus, go_minus};
+    sensor_pos >= 3 and halted=false : {halt};
+    halted = true : {nothing};
+  end Protocol
+  
+  Evolution
+    halted=false and pos = pos + 1 and sensor_pos = sensor_pos if Action=go_minus;
+    halted=false and pos = pos + 1 and sensor_pos = sensor_pos + 1 if Action=go;
+    halted=false and pos = pos + 1 and sensor_pos = sensor_pos + 2 if Action=go_plus;
+    halted=true if Action = halt or Action = nothing;
+  end Evolution
+end Agent
+
+Evaluation
+  halted if Robot.halted = true;
+end Evaluation
+
+Formulae
+  (v, u) AG (halted(v) -> K(v, AX(AX(halted(u)))));
+end Formulae

@@ -1,0 +1,51 @@
+Agent Environment
+  Vars:
+  dummy : boolean;
+  end Vars
+  
+  InitState
+    dummy = true;
+  end InitState
+  
+  Actions = {go};
+  
+  Protocol:
+    dummy = dummy : {go};
+  end Protocol
+  
+end Agent
+
+Agent Robot
+  Vars:
+    pos : 1..7;
+  end Vars
+  
+  InitState
+    pos=1;
+  end InitState
+  
+  Actions = {go_left, go_right, stop};
+  
+  Protocol:
+    pos <= 3 : {go_left, go_right};
+    pos > 3 : {stop};
+  end Protocol
+  
+  Evolution
+    pos = 2 if Action = go_left and pos = 1;
+    pos = 3 if Action = go_right and pos = 1;
+    pos = 4 if Action = go_left and pos = 2;
+    pos = 5 if Action = go_right and pos = 2;
+    pos = 6 if Action = go_left and pos = 3;
+    pos = 7 if Action = go_right and pos = 3;
+    pos = pos if Action = stop;
+  end Evolution
+end Agent
+
+Evaluation
+  isEnd if Robot.pos = 4 or Robot.pos = 5 or Robot.pos = 6 or Robot.pos = 7;
+end Evaluation
+
+Formulae
+  (v, u) AG (isEnd(v) -> K(v, AX isEnd(u)));
+end Formulae
